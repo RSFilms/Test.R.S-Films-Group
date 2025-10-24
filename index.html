@@ -172,6 +172,28 @@
         .blog-content li {
             margin-bottom: 0.5rem; line-height: 1.7;
         }
+
+        /* ===== NAYA ANIMATED GRADIENT BACKGROUND (VIDEO KI JAGAH) ===== */
+        .animated-hero-bg {
+            background: linear-gradient(-45deg, #0F172A, #1E293B, #3B82F6, #1E293B);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            position: relative; /* Hero content ko upar rakhne ke liye */
+        }
+
+        /* Light mode mein alag gradient */
+        .light .animated-hero-bg {
+            background: linear-gradient(-45deg, #F8FAFC, #E0E7FF, #93C5FD, #E0E7FF);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+        }
+
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
     </style>
     
     <!-- Sirf Theme/Mobile Menu ke liye JS -->
@@ -664,7 +686,7 @@
                 <div class="bg-card border border-card rounded-lg p-4 text-center transition-all hover:shadow-lg"><img src="https://placehold.co/100x100/EF4444/FFFFFF?text=Raj" alt="Pro" class="w-20 h-20 rounded-full mx-auto mb-3 border-2 border-card"><h3 class="text-base font-semibold text-heading">Raj Singh</h3><p class="text-primary font-medium text-xs mb-2">SEO Specialist</p><button class="btn btn-primary w-full text-sm py-2 px-3">Hire</button></div>
                 <div class="bg-card border border-card rounded-lg p-4 text-center transition-all hover:shadow-lg"><img src="https://placehold.co/100x100/8B5CF6/FFFFFF?text=Ankit" alt="Pro" class="w-20 h-20 rounded-full mx-auto mb-3 border-2 border-card"><h3 class="text-base font-semibold text-heading">Ankit Roy</h3><p class="text-primary font-medium text-xs mb-2">VFX Artist</p><button class="btn btn-primary w-full text-sm py-2 px-3">Hire</button></div>
                 <div class="bg-card border border-card rounded-lg p-4 text-center transition-all hover:shadow-lg"><img src="https://placehold.co/100x100/F59E0B/FFFFFF?text=Mira" alt="Pro" class="w-20 h-20 rounded-full mx-auto mb-3 border-2 border-card"><h3 class="text-base font-semibold text-heading">Mira Nair</h3><p class="text-primary font-medium text-xs mb-2">Script Writer</p><button class="btn btn-primary w-full text-sm py-2 px-3">Hire</button></div>
-                <div class="bg-card border border-card rounded-lg p-4 text-center transition-all hover:shadow-lg"><img src="https://placehold.co/100x100/EC4899/FFFFFF?text=David" alt="Pro" class="w-20 h-20 rounded-full mx-auto mb-3 border-2 border-card"><h3 class="text-base font-semibold text-heading">David Chen</h3><p class="text-primary font-medium text-xs mb-2">Colorist (DaVinci)</p><button class="btn btn-primary w-full text-sm py-2 px-3">Hire</button></div>
+                <div class="bg-card border border-card rounded-lg p-4 text-center transition-all hover:shadow-lg"><img src="https://placehold.co/100x100/EC4899/FFFFFF?text=David" alt="Pro" class="w-20 h-20 rounded-full mx-auto.mb-3 border-2 border-card"><h3 class="text-base font-semibold text-heading">David Chen</h3><p class="text-primary font-medium text-xs mb-2">Colorist (DaVinci)</p><button class="btn btn-primary w-full text-sm py-2 px-3">Hire</button></div>
                 <div class="bg-card border border-card rounded-lg p-4 text-center transition-all hover:shadow-lg"><img src="https://placehold.co/100x100/3B82F6/FFFFFF?text=Sara" alt="Pro" class="w-20 h-20 rounded-full mx-auto mb-3 border-2 border-card"><h3 class="text-base font-semibold text-heading">Sara Ali</h3><p class="text-primary font-medium text-xs mb-2">Voice Over Artist</p><button class="btn btn-primary w-full text-sm py-2 px-3">Hire</button></div>
                 <div class="bg-card border border-card rounded-lg p-4 text-center transition-all hover:shadow-lg"><img src="https://placehold.co/100x100/10B981/FFFFFF?text=Leo" alt="Pro" class="w-20 h-20 rounded-full mx-auto mb-3 border-2 border-card"><h3 class="text-base font-semibold text-heading">Leo Marcus</h3><p class="text-primary font-medium text-xs mb-2">Photographer</p><button class="btn btn-primary w-full text-sm py-2 px-3">Hire</button></div>
                 <div class="bg-card border border-card rounded-lg p-4 text-center transition-all hover:shadow-lg"><img src="https://placehold.co/100x100/EF4444/FFFFFF?text=Zoya" alt="Pro" class="w-20 h-20 rounded-full mx-auto mb-3 border-2 border-card"><h3 class="text-base font-semibold text-heading">Zoya Farooqi</h3><p class="text-primary font-medium text-xs mb-2">PR Manager</p><button class="btn btn-primary w-full text-sm py-2 px-3">Hire</button></div>
@@ -979,27 +1001,25 @@
         -->
         <section id="page-home" class="page-section">
             <!-- Hero Section -->
-            <div class="relative rounded-lg shadow-xl overflow-hidden h-[60vh] flex items-center justify-center text-center p-8">
+            <!-- 
+                VIDEO KI JAGAH NAYA ANIMATED GRADIENT BACKGROUND.
+                Yeh 100% load hoga aur professional "wavy" look dega.
+            -->
+            <div class="animated-hero-bg rounded-lg shadow-xl overflow-hidden h-[60vh] flex items-center justify-center text-center p-8">
                 
-                <!-- ===== Background Video (AAPKE LIYE ADD KAR DIYA HAI) ===== -->
-                <video 
-                    autoplay 
-                    loop 
-                    muted 
-                    playsinline
-                    class="absolute inset-0 w-full h-full object-cover opacity-30 z-0"
-                >
-                    <!-- 
-                        YEH VIDEO PEHLE SE ADDED HAI (DJ Mixing Console)
-                    -->
-                    <source src="https://github.com/RSFilms/Test.R.S-Films-Group/blob/0c12a37a015c12172f16bfc31569a321df01bedd/12686081_3840_2160_30fps.mp4">
-                    
-                </video>
-                <!-- ===== End Background Video ===== -->
+                <!-- VIDEO TAG HATA DIYA GAYA HAI. Ab yeh fail nahi ho sakta. -->
+
+                <div classRead-only-File-Error: Is 'src' ko apne video URL se badalna hai.
+                    Aap pexels.com ya pixabay.com se free video use kar sakte hain.
+    -->
+    <source src="https://cdn.pixabay.com/video/2019/11/07/28931-372900780_large.mp4" type="video/mp4">
+    Aapka browser video tag ko support nahi karta.
+</video>
+<!-- ===== End Background Video ===== -->
 
                 <div class="relative z-10">
-                    <h1 class="text-4xl md:text-6xl font-bold text-white mb-4">R.S Films Group</h1>
-                    <p class="text-xl md:text-2xl text-primary font-semibold mb-8">The Ultimate All-in-One Creator Platform</p>
+                    <h1 class="text-4xl md:text-6xl font-bold text-white mb-4 [text-shadow:0_2px_4px_rgba(0,0,0,0.5)]">R.S Films Group</h1>
+                    <p class="text-xl md:text-2xl text-white font-semibold mb-8 [text-shadow:0_2px_4px_rgba(0,0,0,0.5)]">The Ultimate All-in-One Creator Platform</p>
                     <a href="#page-services" class="btn btn-primary btn-lg">Humare Services Dekhein</a>
                 </div>
             </div>
@@ -1076,7 +1096,7 @@
                     <p class="text-main text-sm max-w-xs mb-4">India ki leading all-in-one platform jo creators, musicians, aur brands ko unki full potential tak pahunchne mein madad karti hai.</p>
                     <div class="flex space-x-4">
                         <a href="#" class="text-main hover:text-primary"><ion-icon name="logo-youtube" class="text-xl"></ion-icon></a>
-                        <a href="#" class="text-main hover:text-primary"><ion-icon name="logo-instagram" class="text-xl"></ion-icon></a>
+                        <a href="#" classa="text-main hover:text-primary"><ion-icon name="logo-instagram" class="text-xl"></ion-icon></a>
                         <a href="#" class="text-main hover:text-primary"><ion-icon name="logo-facebook" class="text-xl"></ion-icon></a>
                         <a href="#" class="text-main hover:text-primary"><ion-icon name="logo-twitter" class="text-xl"></ion-icon></a>
                     </div>
@@ -1087,7 +1107,7 @@
                     <h4 class="text-sm font-semibold text-heading uppercase tracking-wider mb-3">Services</h4>
                     <ul class="space-y-2 text-sm">
                         <li><a href="#page-services" class="text-main hover:text-primary">Channel Management</a></li>
-                        <li><a href="#page-services" class="text-main hover:text-primary">Video Editing</a></li>
+                        <li><a href="#page-services" class_disabled="text-main hover:text-primary">Video Editing</a></li>
                         <li><a href="#page-services" class="text-main hover:text-primary">Video Shooting</a></li>
                         <li><a href="#page-services" class="text-main hover:text-primary">Graphic Designing</a></li>
                         <li><a href="#page-mcn" class="text-main hover:text-primary">MCN</a></li>
