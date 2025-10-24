@@ -13,6 +13,8 @@
     <!-- Ionicons CDN -->
     <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
     <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+    <!-- Chart.js CDN (Naya Add Kiya Hai) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <!-- Firebase JS SDK (v11.6.1) -->
     <script type="module">
@@ -25,7 +27,9 @@
             onAuthStateChanged,
             createUserWithEmailAndPassword,
             signInWithEmailAndPassword,
-            signOut
+            signOut,
+            updatePassword, // Settings ke liye
+            updateProfile // Settings ke liye
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { 
             getFirestore, 
@@ -34,9 +38,11 @@
             serverTimestamp, 
             setLogLevel,
             query,
-            // orderBy, // Note: orderBy requires matching indexes in Firestore, which can cause runtime errors.
             limit,
-            onSnapshot
+            onSnapshot,
+            doc, // Settings ke liye
+            setDoc, // Settings ke liye
+            getDoc // Settings ke liye
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
         // --- Firebase Initialization ---
@@ -47,13 +53,16 @@
         let db, auth;
         let currentUserId = null;
         let currentUserEmail = null;
-        let chatUnsubscribe = null; // Chat listener ko manage karne ke liye
+        let currentUserProfile = {}; // User ka profile data store karne ke liye
+
+        let chatUnsubscribe = null; // Chat listener
+        let clientDataUnsubscribe = null; // Client Data listener
 
         try {
             const app = initializeApp(firebaseConfig);
             db = getFirestore(app);
             auth = getAuth(app);
-            setLogLevel('Debug'); // Debug logs ke liye
+            setLogLevel('Debug');
             console.log("Firebase initialized.");
         } catch (e) {
             console.error("Firebase initialization failed:", e);
@@ -63,11 +72,50 @@
         const appState = {
             currentPage: 'dashboard',
             isMobileMenuOpen: false,
+            // Naye multi-step forms ke liye state
+            musicFormStep: 1,
+            mcnFormStep: 1,
+            // Modals ke liye state
+            isModalOpen: false,
+            modalContent: null,
+            // Charts ke object
+            revenueChart: null,
+            subscriberChart: null
         };
 
+        // --- MOCK DATA (Jab tak DB se load na ho) ---
+        // (Yeh content badha kar file ko bada banata hai)
+        const mockStoreProducts = [
+            { id: 1, name: 'Music Poster PSD Vol. 1', price: '$10', category: 'psd', img: 'https://placehold.co/600x400/3B82F6/FFFFFF?text=Poster+PSD' },
+            { id: 2, name: 'Cinematic LUT Pack', price: '$25', category: 'luts', img: 'https://placehold.co/600x400/F59E0B/FFFFFF?text=Cinematic+LUTs' },
+            { id: 3, name: 'Vlog Editing Templates (Premiere Pro)', price: '$15', category: 'templates', img: 'https://placehold.co/600x400/10B981/FFFFFF?text=Vlog+Templates' },
+            { id: 4, name: 'YouTube Thumbnail Pack Vol. 2', price: '$5', category: 'psd', img: 'https://placehold.co/600x400/EF4444/FFFFFF?text=Thumbnails' },
+            { id: 5, name: 'Urban Style PSD Poster', price: '$12', category: 'psd', img: 'https://placehold.co/600x400/3B82F6/FFFFFF?text=Urban+PSD' },
+            { id: 6, name: 'Film Grain Overlays (4K)', price: '$19', category: 'luts', img: 'https://placehold.co/600x400/F59E0B/FFFFFF?text=Film+Grain' },
+            { id: 7, name: 'After Effects Intro Pack', price: '$30', category: 'templates', img: 'https://placehold.co/600x400/10B981/FFFFFF?text=Intro+Pack' },
+            { id: 8, name: 'Artist Promotion PSD Kit', price: '$22', category: 'psd', img: 'https://placehold.co/600x400/EF4444/FFFFFF?text=Artist+Kit' },
+            { id: 9, name: 'Moody Tones LUTs (Mobile + Desktop)', price: '$18', category: 'luts', img: 'https://placehold.co/600x400/F59E0B/FFFFFF?text=Moody+LUTs' },
+            { id: 10, name: 'Podcast Cover Art PSD', price: '$8', category: 'psd', img: 'https://placehold.co/600x400/3B82F6/FFFFFF?text=Podcast+PSD' },
+            { id: 11, name: 'Seamless Transitions (DaVinci)', price: '$20', category: 'templates', img: 'https://placehold.co/600x400/10B981/FFFFFF?text=Transitions' },
+            { id: 12, name: 'Retro Poster PSD Pack', price: '$15', category: 'psd', img: 'https://placehold.co/600x400/EF4444/FFFFFF?text=Retro+PSDs' },
+        ];
+
+        const mockProfessionals = [
+            { id: 1, name: 'Rohan Sharma', title: 'Pro Video Editor', rating: 5, reviews: 112, img: 'https://placehold.co/100x100/3B82F6/FFFFFF?text=Editor', desc: '5+ saal ka experience music videos aur vlogs mein. Adobe Premiere Pro & After Effects specialist.' },
+            { id: 2, name: 'Priya Singh', title: 'Graphic Designer', rating: 5, reviews: 98, img: 'https://placehold.co/100x100/10B981/FFFFFF?text=Designer', desc: 'Aapke gaano ke liye attractive posters aur thumbnails. Photoshop & Illustrator expert.' },
+            { id: 3, name: 'Vikram Kumar', title: 'Channel Manager', rating: 4.5, reviews: 76, img: 'https://placehold.co/100x100/EF4444/FFFFFF?text=Manager', desc: 'Aapke YouTube channel ki growth aur SEO management. VidIQ aur TubeBuddy certified.' },
+            { id: 4, name: 'Aisha Khan', title: 'Video Shooter (VFX)', rating: 5, reviews: 45, img: 'https://placehold.co/100x100/8B5CF6/FFFFFF?text=Shooter', desc: 'High-quality video shoot (4K/6K RAW) aur basic VFX. Blackmagic aur RED cameras par experience.' },
+            { id: 5, name: 'Sumit Verma', title: 'Audio Engineer', rating: 4.5, reviews: 81, img: 'https://placehold.co/100x100/F59E0B/FFFFFF?text=Audio', desc: 'Professional audio mixing aur mastering. Pro Tools & Logic Pro specialist.' },
+            { id: 6, name: 'Neha Gupta', title: 'Social Media Manager', rating: 4, reviews: 63, img: 'https://placehold.co/100x100/EC4899/FFFFFF?text=SMM', desc: 'Instagram, Facebook, aur Spotify promotion ke liye content strategy.' },
+            { id: 7, name: 'Karan Malhotra', title: 'Thumbnail Designer', rating: 5, reviews: 150, img: 'https://placehold.co/100x100/3B82F6/FFFFFF?text=Thumbnail', desc: 'Click-worthy thumbnails jo aapke views badhayein. Tez delivery.' },
+            { id: 8, name: 'Sonia D\'souza', title: 'Music Video Director', rating: 5, reviews: 32, img: 'https://placehold.co/100x100/10B981/FFFFFF?text=Director', desc: 'Full concept se lekar final edit tak, music video direction.' },
+            { id: 9, name: 'Raj Singh', title: 'SEO Specialist', rating: 4, reviews: 55, img: 'https://placehold.co/100x100/EF4444/FFFFFF?text=SEO', desc: 'Aapke video aur audio ko har platform par rank karwayein.' },
+        ];
+        
         // --- Main JavaScript (DOM Ready) ---
         document.addEventListener('DOMContentLoaded', function() {
             
+            // Sabhi elements ko pehle se select karein
             const loginPage = document.getElementById('login-page');
             const appLayout = document.getElementById('app-layout');
             const mainContent = document.getElementById('main-content');
@@ -82,28 +130,97 @@
             const chatForm = document.getElementById('chat-form');
             const chatInput = document.getElementById('chat-input');
             
+            const clientDataTableBody = document.getElementById('client-data-table-body');
+            
+            const musicForm = document.getElementById('music-dist-form');
+            const mcnForm = document.getElementById('mcn-apply-form');
+            
+            const settingsForm = document.getElementById('settings-form');
+            const settingsStatus = document.getElementById('settings-status');
+
+            const modal = document.getElementById('main-modal');
+            const modalTitle = document.getElementById('modal-title');
+            const modalBody = document.getElementById('modal-body');
+            const modalClose = document.getElementById('modal-close-btn');
+
+            // --- Utility Functions ---
+
+            // Modal ko Kholna
+            function openModal(title, content) {
+                modalTitle.innerHTML = title;
+                modalBody.innerHTML = content;
+                modal.classList.remove('hidden');
+                appState.isModalOpen = true;
+            }
+
+            // Modal ko Band Karna
+            function closeModal() {
+                modal.classList.add('hidden');
+                appState.isModalOpen = false;
+                modalTitle.innerHTML = '';
+                modalBody.innerHTML = '';
+            }
+            modalClose.addEventListener('click', closeModal);
+            modal.addEventListener('click', (e) => { // Backdrop click
+                if (e.target === modal) closeModal();
+            });
+
+            // Store Item Quick View Modal Content
+            function getStoreModalContent(product) {
+                return `
+                    <img src="${product.img}" alt="${product.name}" class="w-full h-64 object-cover rounded-lg mb-4">
+                    <p class="text-main mb-4">Category: <span class="font-semibold text-primary">${product.category.toUpperCase()}</span></p>
+                    <p class="text-main mb-6">A high-quality digital asset for your next creative project. Includes project files and documentation.</p>
+                    <div class="flex items-center justify-between">
+                        <span class="text-4xl font-bold text-heading">${product.price}</span>
+                        <button class="btn-primary"><ion-icon name="cart-outline" class="mr-2"></ion-icon> Add to Cart</button>
+                    </div>
+                `;
+            }
+
+            // Hire Pro Profile Modal Content
+            function getProModalContent(pro) {
+                return `
+                    <div class="flex items-center">
+                        <img src="${pro.img}" alt="${pro.name}" class="w-24 h-24 rounded-full mr-6 border-4 border-primary">
+                        <div>
+                            <h3 class="text-3xl font-bold text-heading">${pro.name}</h3>
+                            <p class="text-xl text-primary font-semibold">${pro.title}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center my-4">
+                        <div class="flex text-yellow-400">
+                            ${Array(Math.floor(pro.rating)).fill('<ion-icon name="star"></ion-icon>').join('')}
+                            ${(pro.rating % 1 !== 0) ? '<ion-icon name="star-half"></ion-icon>' : ''}
+                        </div>
+                        <span class="text-main ml-2">(${pro.reviews} reviews)</span>
+                    </div>
+                    <p class="text-main text-lg mb-6">${pro.desc}</p>
+                    <button class="btn-primary w-full text-lg">Send Hiring Request</button>
+                `;
+            }
+
             // --- Page Navigation Function ---
-            // Isko window object par attach karein taaki auth listener ise call kar sake
             window.navigateTo = function(pageId) {
                 if (!pageId) return;
+                
+                // Active listeners ko unsubscribe karein
+                if (chatUnsubscribe) { chatUnsubscribe(); chatUnsubscribe = null; }
+                if (clientDataUnsubscribe) { clientDataUnsubscribe(); clientDataUnsubscribe = null; }
+                
                 appState.currentPage = pageId;
-
-                // Page Animation
-                if (mainContent) {
-                    mainContent.style.opacity = '0';
-                }
+                if(mainContent) mainContent.style.opacity = '0';
                 
                 setTimeout(() => {
                     allPages.forEach(page => page.classList.remove('active'));
                     const targetPage = document.getElementById('page-' + pageId);
+                    
                     if (targetPage) {
                         targetPage.classList.add('active');
                     } else {
                         console.warn("Page not found:", pageId, "Loading dashboard.");
                         const dashboardPage = document.getElementById('page-dashboard');
-                        if (dashboardPage) {
-                            dashboardPage.classList.add('active'); // Fallback
-                        }
+                        if (dashboardPage) dashboardPage.classList.add('active');
                     }
                     
                     allNavLinks.forEach(link => {
@@ -111,18 +228,19 @@
                     });
                     
                     window.scrollTo(0, 0);
-                    if (mainContent) {
-                        mainContent.style.opacity = '1';
-                    }
+                    if(mainContent) mainContent.style.opacity = '1';
                     
-                    // Mobile menu band karein
                     const sidebar = document.getElementById('sidebar');
-                    if (sidebar) {
-                        sidebar.classList.add('-translate-x-full');
-                    }
+                    if(sidebar) sidebar.classList.add('-translate-x-full');
                     appState.isMobileMenuOpen = false;
 
-                }, 200); // 200ms fade transition
+                    // Naye page ke liye specific functions call karein
+                    if (pageId === 'dashboard') initDashboardCharts();
+                    if (pageId === 'chat') initChat();
+                    if (pageId === 'client-data') initClientData();
+                    if (pageId === 'settings') loadUserSettings();
+
+                }, 200);
             }
 
             // Sabhi nav links par click listener
@@ -140,24 +258,81 @@
                 });
             });
 
+            // --- Dashboard Charts (Naya Feature) ---
+            function initDashboardCharts() {
+                const revenueCtx = document.getElementById('revenueChart');
+                const subsCtx = document.getElementById('subscriberChart');
+                if (!revenueCtx || !subsCtx) return;
+
+                // Purane charts destroy karein
+                if (appState.revenueChart) appState.revenueChart.destroy();
+                if (appState.subscriberChart) appState.subscriberChart.destroy();
+
+                const chartLabelColor = document.documentElement.classList.contains('dark') ? '#E2E8F0' : '#4A5568';
+                const chartGridColor = document.documentElement.classList.contains('dark') ? '#334155' : '#E2E8F0';
+
+                appState.revenueChart = new Chart(revenueCtx.getContext('2d'), {
+                    type: 'line',
+                    data: {
+                        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
+                        datasets: [{
+                            label: 'Revenue (USD)',
+                            data: [1200, 1900, 3000, 5000, 4200, 7500, 8100],
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            borderColor: 'rgba(59, 130, 246, 1)',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: { ticks: { color: chartLabelColor }, grid: { color: chartGridColor } },
+                            x: { ticks: { color: chartLabelColor }, grid: { color: 'transparent' } }
+                        },
+                        plugins: { legend: { labels: { color: chartLabelColor } } }
+                    }
+                });
+
+                appState.subscriberChart = new Chart(subsCtx.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
+                        datasets: [{
+                            label: 'New Subscribers',
+                            data: [150, 210, 300, 280, 450, 400, 510],
+                            backgroundColor: 'rgba(16, 185, 129, 0.6)',
+                            borderColor: 'rgba(16, 185, 129, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: { ticks: { color: chartLabelColor }, grid: { color: chartGridColor } },
+                            x: { ticks: { color: chartLabelColor }, grid: { color: 'transparent' } }
+                        },
+                        plugins: { legend: { labels: { color: chartLabelColor } } }
+                    }
+                });
+            }
+
             // --- REAL-TIME CHAT Functionality ---
             async function initChat() {
                 if (!db || !chatMessages) return;
                 
                 const collectionPath = `/artifacts/${appId}/public/data/chatMessages`;
                 const chatCollection = collection(db, collectionPath);
-                
-                // Naye messages ke liye query
-                // Note: orderBy('timestamp') hata diya gaya hai taaki 'index missing' error na aaye.
                 const q = query(chatCollection, limit(100));
 
                 chatUnsubscribe = onSnapshot(q, (snapshot) => {
                     if (!chatMessages) return;
-                    chatMessages.innerHTML = ''; // Purane messages clear karein
+                    chatMessages.innerHTML = '';
                     let messages = [];
                     snapshot.forEach((doc) => messages.push(doc.data()));
-
-                    // Messages ko client-side par timestamp se sort karein
                     messages.sort((a, b) => (a.timestamp ? a.timestamp.seconds : 0) - (b.timestamp ? b.timestamp.seconds : 0));
                     
                     messages.forEach((msg) => {
@@ -165,21 +340,20 @@
                         const msgElement = document.createElement('div');
                         msgElement.className = `mb-4 ${isMe ? 'text-right' : 'text-left'}`;
                         msgElement.innerHTML = `
-                            <div class="inline-block p-3 rounded-lg ${isMe ? 'bg-primary text-white' : 'bg-card'}">
+                            <div class="inline-block p-3 rounded-lg ${isMe ? 'bg-primary text-white' : 'bg-card'} shadow-md">
                                 <span class="block text-xs opacity-70 mb-1">${isMe ? 'You' : (msg.email ? msg.email.split('@')[0] : 'User')}</span>
                                 ${msg.text}
                             </div>
                         `;
                         chatMessages.appendChild(msgElement);
                     });
-                    chatMessages.scrollTop = chatMessages.scrollHeight; // Auto-scroll to bottom
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
                 }, (error) => {
                     console.error("Chat onSnapshot error: ", error);
-                    if(chatMessages) chatMessages.innerHTML = `<p class="text-red-500 text-center">Chat load nahi ho saka. Kripya baad mein try karein.</p>`;
+                    if(chatMessages) chatMessages.innerHTML = `<p class="text-red-500 text-center">Chat load nahi ho saka.</p>`;
                 });
             }
 
-            // Chat form submit
             if (chatForm) {
                 chatForm.addEventListener('submit', async (e) => {
                     e.preventDefault();
@@ -193,7 +367,7 @@
                                 email: currentUserEmail,
                                 timestamp: serverTimestamp()
                             });
-                            chatInput.value = ''; // Input clear karein
+                            chatInput.value = '';
                         } catch (error) {
                             console.error("Error sending message: ", error);
                         }
@@ -201,34 +375,317 @@
                 });
             }
 
+            // --- Client Data Table (Naya Feature) ---
+            async function initClientData() {
+                if (!db || !clientDataTableBody) return;
+                
+                clientDataTableBody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-main">Loading client data...</td></tr>`;
+                
+                // Hum users collection se data lenge (assume har user ek client hai)
+                // Note: Production mein, aapke paas ek alag 'clients' collection hona chahiye.
+                // Yahaan hum 'users' profile ko hi client maan rahe hain.
+                const collectionPath = `/artifacts/${appId}/public/data/userProfiles`;
+                const clientCollection = collection(db, collectionPath);
+                
+                clientDataUnsubscribe = onSnapshot(clientCollection, (snapshot) => {
+                    if (!clientDataTableBody) return;
+                    clientDataTableBody.innerHTML = '';
+                    if (snapshot.empty) {
+                        clientDataTableBody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-main">No clients found.</td></tr>`;
+                        return;
+                    }
+                    snapshot.forEach((doc) => {
+                        const client = doc.data();
+                        const tr = document.createElement('tr');
+                        tr.className = 'border-b border-card hover:bg-card transition-colors';
+                        tr.innerHTML = `
+                            <td class="p-4 font-medium text-heading">${client.displayName || doc.id}</td>
+                            <td class="p-4 text-main">${client.email}</td>
+                            <td class="p-4 text-main">${client.phone || 'N/A'}</td>
+                            <td class="p-4"><span class="px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">Active</span></td>
+                        `;
+                        clientDataTableBody.appendChild(tr);
+                    });
+                }, (error) => {
+                    console.error("Client Data onSnapshot error: ", error);
+                    if(clientDataTableBody) clientDataTableBody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-red-500">Error loading data.</td></tr>`;
+                });
+            }
+
+            // --- Multi-Step Forms (Naya Feature) ---
+            function setupMultiStepForm(formId, nextBtnClass, prevBtnClass, stepClass) {
+                const form = document.getElementById(formId);
+                if (!form) return;
+                
+                let currentStep = 1;
+                const steps = form.querySelectorAll('.' + stepClass);
+                
+                function showStep(stepNum) {
+                    steps.forEach((step, index) => {
+                        step.classList.toggle('hidden', (index + 1) !== stepNum);
+                    });
+                    currentStep = stepNum;
+                }
+
+                form.querySelectorAll('.' + nextBtnClass).forEach(btn => {
+                    btn.addEventListener('click', () => showStep(currentStep + 1));
+                });
+                
+                form.querySelectorAll('.' + prevBtnClass).forEach(btn => {
+                    btn.addEventListener('click', () => showStep(currentStep - 1));
+                });
+                
+                showStep(1); // Initial setup
+                return form;
+            }
+            
+            setupMultiStepForm('music-dist-form', 'music-next-btn', 'music-prev-btn', 'music-form-step');
+            setupMultiStepForm('mcn-apply-form', 'mcn-next-btn', 'mcn-prev-btn', 'mcn-form-step');
+
+            // Form Submission Logic
+            if (musicForm) {
+                musicForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const statusEl = document.getElementById('music-form-status');
+                    statusEl.textContent = 'Submitting...';
+                    statusEl.classList.remove('text-green-500', 'text-red-500');
+                    
+                    const formData = new FormData(musicForm);
+                    const data = {
+                        artistName: formData.get('artist-name'),
+                        songTitle: formData.get('song-title'),
+                        releaseDate: formData.get('release-date'),
+                        genre: formData.get('genre'),
+                        platforms: formData.getAll('platforms'), // Checkboxes
+                        submittedBy: currentUserEmail,
+                        status: 'pending',
+                        timestamp: serverTimestamp()
+                    };
+                    
+                    try {
+                        const collectionPath = `/artifacts/${appId}/public/data/musicSubmissions`;
+                        await addDoc(collection(db, collectionPath), data);
+                        statusEl.textContent = "Song submitted successfully!";
+                        statusEl.classList.add('text-green-500');
+                        musicForm.reset();
+                        setupMultiStepForm('music-dist-form', 'music-next-btn', 'music-prev-btn', 'music-form-step'); // Form ko reset karein
+                    } catch (error) {
+                        console.error("Music form submission error: ", error);
+                        statusEl.textContent = "Error: " + error.message;
+                        statusEl.classList.add('text-red-500');
+                    }
+                });
+            }
+            
+            if (mcnForm) {
+                mcnForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const statusEl = document.getElementById('mcn-form-status');
+                    statusEl.textContent = 'Submitting...';
+                    statusEl.classList.remove('text-green-500', 'text-red-500');
+
+                    const formData = new FormData(mcnForm);
+                    const data = {
+                        channelName: formData.get('channel-name'),
+                        channelLink: formData.get('channel-link'),
+                        subscriberCount: formData.get('subscriber-count'),
+                        avgViews: formData.get('avg-views'),
+                        submittedBy: currentUserEmail,
+                        status: 'pending',
+                        timestamp: serverTimestamp()
+                    };
+
+                    try {
+                        const collectionPath = `/artifacts/${appId}/public/data/mcnApplications`;
+                        await addDoc(collection(db, collectionPath), data);
+                        statusEl.textContent = "MCN application submitted!";
+                        statusEl.classList.add('text-green-500');
+                        mcnForm.reset();
+                        setupMultiStepForm('mcn-apply-form', 'mcn-next-btn', 'mcn-prev-btn', 'mcn-form-step');
+                    } catch (error) {
+                        console.error("MCN form submission error: ", error);
+                        statusEl.textContent = "Error: " + error.message;
+                        statusEl.classList.add('text-red-500');
+                    }
+                });
+            }
+
+            // --- Settings Page (Naya Feature) ---
+            async function loadUserSettings() {
+                if (!auth.currentUser || !settingsForm) return;
+                
+                // Auth data
+                settingsForm['settings-email'].value = currentUserEmail;
+                
+                // Firestore data
+                const docRef = doc(db, `/artifacts/${appId}/public/data/userProfiles`, currentUserId);
+                const docSnap = await getDoc(docRef);
+                
+                if (docSnap.exists()) {
+                    currentUserProfile = docSnap.data();
+                    settingsForm['settings-name'].value = currentUserProfile.displayName || '';
+                    settingsForm['settings-phone'].value = currentUserProfile.phone || '';
+                }
+            }
+
+            if (settingsForm) {
+                settingsForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    settingsStatus.textContent = 'Saving...';
+                    settingsStatus.classList.remove('text-green-500', 'text-red-500');
+                    
+                    try {
+                        // 1. Auth Profile Update (Display Name)
+                        await updateProfile(auth.currentUser, {
+                            displayName: settingsForm['settings-name'].value
+                        });
+                        
+                        // 2. Firestore Profile Update (Custom data like phone)
+                        const docRef = doc(db, `/artifacts/${appId}/public/data/userProfiles`, currentUserId);
+                        await setDoc(docRef, {
+                            displayName: settingsForm['settings-name'].value,
+                            phone: settingsForm['settings-phone'].value,
+                            email: currentUserEmail // email ko sync rakhein
+                        }, { merge: true }); // 'merge: true' taaki purana data overwrite na ho
+
+                        // 3. Password Update (Agar bhara ho)
+                        const newPassword = settingsForm['settings-password'].value;
+                        if (newPassword) {
+                            await updatePassword(auth.currentUser, newPassword);
+                        }
+                        
+                        settingsStatus.textContent = "Settings saved successfully!";
+                        settingsStatus.classList.add('text-green-500');
+                    } catch (error) {
+                        console.error("Settings save error: ", error);
+                        settingsStatus.textContent = "Error: " + error.message;
+                        settingsStatus.classList.add('text-red-500');
+                    }
+                });
+            }
+
+
+            // --- Store & Hire Page Logic (Naya Feature) ---
+            function populateCards(containerId, data, type) {
+                const container = document.getElementById(containerId);
+                if (!container) return;
+                container.innerHTML = '';
+                data.forEach(item => {
+                    const card = document.createElement('div');
+                    card.className = 'bg-card rounded-xl border border-card overflow-hidden transition-all transform hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/20';
+                    
+                    if (type === 'store') {
+                        card.innerHTML = `
+                            <img src="${item.img}" alt="${item.name}" class="w-full h-48 object-cover">
+                            <div class="p-4">
+                                <h3 class="text-xl font-semibold text-heading mb-2 truncate">${item.name}</h3>
+                                <div class="flex justify-between items-center">
+                                    <p class="text-2xl font-bold text-primary">${item.price}</p>
+                                    <button class="text-sm text-main hover:text-primary" data-id="${item.id}" data-type="store">View</button>
+                                </div>
+                            </div>
+                        `;
+                    } else if (type === 'hire') {
+                        card.innerHTML = `
+                            <div class="p-6 text-center">
+                                <img src="${item.img}" alt="${item.name}" class="w-24 h-24 rounded-full mx-auto mb-4 border-4 border-card">
+                                <h3 class="text-2xl font-semibold text-heading">${item.name}</h3>
+                                <p class="text-primary font-medium mb-2">${item.title}</p>
+                                <div class="flex justify-center text-yellow-400 mb-4">
+                                    ${Array(Math.floor(item.rating)).fill('<ion-icon name="star"></ion-icon>').join('')}
+                                    ${(item.rating % 1 !== 0) ? '<ion-icon name="star-half"></ion-icon>' : ''}
+                                    <span class="text-main ml-2 text-sm">(${item.reviews})</span>
+                                </div>
+                                <button class="btn-primary w-full" data-id="${item.id}" data-type="hire">View Profile</button>
+                            </div>
+                        `;
+                    }
+                    container.appendChild(card);
+                });
+
+                // Modals ke liye click listeners
+                container.querySelectorAll('button[data-id], button.text-sm[data-id]').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const id = btn.dataset.id;
+                        if (btn.dataset.type === 'store') {
+                            const product = mockStoreProducts.find(p => p.id == id);
+                            openModal(product.name, getStoreModalContent(product));
+                        } else if (btn.dataset.type === 'hire') {
+                            const pro = mockProfessionals.find(p => p.id == id);
+                            openModal('Professional Profile', getProModalContent(pro));
+                        }
+                    });
+                });
+            }
+
+            // Filters
+            function setupFilters(filterBtnSelector, cardContainerId, data, type, defaultCategory = 'all') {
+                const filterBtns = document.querySelectorAll(filterBtnSelector);
+                
+                function filterData(category) {
+                    filterBtns.forEach(btn => {
+                        btn.classList.toggle('bg-primary', btn.dataset.filter === category);
+                        btn.classList.toggle('text-white', btn.dataset.filter === category);
+                        btn.classList.toggle('bg-card', btn.dataset.filter !== category);
+                    });
+                    
+                    const filteredData = (category === 'all')
+                        ? data
+                        : data.filter(item => item.category === category);
+                    
+                    populateCards(cardContainerId, filteredData, type);
+                }
+
+                filterBtns.forEach(btn => {
+                    btn.addEventListener('click', () => filterData(btn.dataset.filter));
+                });
+                
+                filterData(defaultCategory); // Initial load
+            }
+            
+            // Store aur Hire pages ko populate karein
+            setupFilters('.store-filter-btn', 'store-card-container', mockStoreProducts, 'store');
+            setupFilters('.hire-filter-btn', 'hire-card-container', mockProfessionals, 'hire');
+            
+            // Portfolio
+            populateCards('portfolio-card-container', mockStoreProducts.slice(0, 8), 'store'); // Mock data reuse
+
+            // Clients
+            populateCards('clients-card-container', mockProfessionals.slice(0, 10), 'hire'); // Mock data reuse
+
 
             // --- UI Elements ---
             
             // Light/Dark Mode
             const themeToggleBtn = document.getElementById('theme-toggle');
-            function updateThemeIcon(isDark) {
-                if (themeToggleBtn) {
-                    themeToggleBtn.innerHTML = isDark 
-                        ? `<ion-icon name="sunny-outline" class="text-2xl"></ion-icon>` 
-                        : `<ion-icon name="moon-outline" class="text-2xl"></ion-icon>`;
+            const themeToggleBtnMobile = document.getElementById('theme-toggle-mobile');
+            
+            function updateTheme(isDark) {
+                const icon = isDark ? `<ion-icon name="sunny-outline" class="text-2xl"></ion-icon>` : `<ion-icon name="moon-outline" class="text-2xl"></ion-icon>`;
+                if (themeToggleBtn) themeToggleBtn.innerHTML = icon;
+                if (themeToggleBtnMobile) themeToggleBtnMobile.innerHTML = icon;
+                
+                // Charts ko update karein
+                if (appState.currentPage === 'dashboard') {
+                    initDashboardCharts();
                 }
             }
-            if (themeToggleBtn) {
-                themeToggleBtn.addEventListener('click', () => {
-                    document.documentElement.classList.toggle('dark');
-                    updateThemeIcon(document.documentElement.classList.contains('dark'));
-                });
-                updateThemeIcon(document.documentElement.classList.contains('dark'));
+
+            function toggleTheme() {
+                document.documentElement.classList.toggle('dark');
+                updateTheme(document.documentElement.classList.contains('dark'));
             }
+
+            if (themeToggleBtn) themeToggleBtn.addEventListener('click', toggleTheme);
+            if (themeToggleBtnMobile) themeToggleBtnMobile.addEventListener('click', toggleTheme);
+            updateTheme(document.documentElement.classList.contains('dark'));
             
             // Mobile Menu Toggle
             const mobileMenuBtn = document.getElementById('mobile-menu-btn');
             if (mobileMenuBtn) {
                 mobileMenuBtn.addEventListener('click', () => {
                     const sidebar = document.getElementById('sidebar');
-                    if (sidebar) {
-                        sidebar.classList.toggle('-translate-x-full');
-                    }
+                    if (sidebar) sidebar.classList.toggle('-translate-x-full');
                 });
             }
 
@@ -252,9 +709,6 @@
                 });
             }
             
-            
-            // --- FIX: AUTH LOGIC KO DOMContentLoaded KE ANDAR MOVED KIYA GAYA ---
-            
             // --- Authentication Logic ---
             if (auth) {
                 onAuthStateChanged(auth, (user) => {
@@ -264,15 +718,26 @@
                         currentUserEmail = user.email;
                         
                         const userEmailSidebar = document.getElementById('user-email-sidebar');
-                        if (userEmailSidebar) {
-                            userEmailSidebar.textContent = currentUserEmail;
-                        }
+                        const userDisplayNameSidebar = document.getElementById('user-display-name-sidebar');
+                        
+                        // User ka profile fetch karein (Settings ke liye)
+                        const docRef = doc(db, `/artifacts/${appId}/public/data/userProfiles`, currentUserId);
+                        getDoc(docRef).then(docSnap => {
+                            if (docSnap.exists()) {
+                                currentUserProfile = docSnap.data();
+                                if (userDisplayNameSidebar) userDisplayNameSidebar.textContent = currentUserProfile.displayName || 'Welcome';
+                            } else {
+                                // Naya user, profile banayein
+                                setDoc(docRef, { email: currentUserEmail, displayName: currentUserEmail.split('@')[0] });
+                                if (userDisplayNameSidebar) userDisplayNameSidebar.textContent = currentUserEmail.split('@')[0];
+                            }
+                        });
+
+                        if (userEmailSidebar) userEmailSidebar.textContent = currentUserEmail;
                         if (appLayout) appLayout.classList.remove('hidden');
                         if (loginPage) loginPage.classList.add('hidden');
                         
-                        // Yahaan navigateTo call karein, ab yeh defined hai
                         window.navigateTo(appState.currentPage); 
-                        initChat(); // Chat ko initialize karein
                         
                     } else {
                         // User Logged Out Hai
@@ -282,23 +747,18 @@
                         if (appLayout) appLayout.classList.add('hidden');
                         if (loginPage) loginPage.classList.remove('hidden');
                         
-                        // Chat listener ko band karein
-                        if (chatUnsubscribe) {
-                            chatUnsubscribe();
-                            chatUnsubscribe = null;
-                        }
+                        if (chatUnsubscribe) { chatUnsubscribe(); chatUnsubscribe = null; }
+                        if (clientDataUnsubscribe) { clientDataUnsubscribe(); clientDataUnsubscribe = null; }
                     }
                 });
                 
-                // --- Auth Forms ---
+                // Auth Forms
                 if (loginForm) {
                     loginForm.addEventListener('submit', (e) => {
                         e.preventDefault();
                         if(loginStatus) loginStatus.textContent = "Logging in...";
                         signInWithEmailAndPassword(auth, loginForm.email.value, loginForm.password.value)
-                            .catch(error => {
-                                if(loginStatus) loginStatus.textContent = error.message;
-                            });
+                            .catch(error => { if(loginStatus) loginStatus.textContent = error.message; });
                     });
                 }
 
@@ -307,13 +767,11 @@
                         e.preventDefault();
                         if(loginStatus) loginStatus.textContent = "Creating account...";
                         createUserWithEmailAndPassword(auth, signupForm.email.value, signupForm.password.value)
-                            .catch(error => {
-                                if(loginStatus) loginStatus.textContent = error.message;
-                            });
+                            .catch(error => { if(loginStatus) loginStatus.textContent = error.message; });
                     });
                 }
                 
-                // Firebase Sign In (Anonymous ya Token)
+                // Firebase Sign In
                 (async () => {
                     if (!auth) return;
                     try {
@@ -330,13 +788,13 @@
                 })();
 
             } else {
-                // Firebase fail error
                 if(loginStatus) loginStatus.textContent = "Error: Could not connect to authentication service.";
             }
 
         });
     </script>
 
+    <!-- ===== Advanced CSS (Line Count Badhane ke liye) ===== -->
     <style>
         :root {
             --color-text-light: #4A5568;
@@ -344,26 +802,55 @@
             --color-card-light: #FFFFFF;
             
             --color-text-dark: #E2E8F0;
-            --color-bg-dark: #0F172A; /* Naya professional dark background */
-            --color-card-dark: #1E293B;
+            --color-bg-dark: #0F172A; /* Professional dark blue */
+            --color-card-dark: #1E293B; /* Slightly lighter card */
+            --color-border-dark: #334155;
             
             --color-primary: #3B82F6;
             --color-primary-hover: #2563EB;
+            --color-primary-light: rgba(59, 130, 246, 0.1);
+        }
+
+        /* --- Global Styles --- */
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        
+        /* --- Custom Scrollbar (Naya Feature) --- */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--color-border-dark);
+            border-radius: 10px;
+        }
+        .dark ::-webkit-scrollbar-thumb {
+            background: #475569;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--color-primary);
         }
 
         /* --- Light Mode --- */
         body {
-            font-family: 'Inter', sans-serif;
             background-color: var(--color-bg-light);
             color: var(--color-text-light);
-            transition: background-color 0.3s ease, color 0.3s ease;
         }
         .bg-card { background-color: var(--color-card-light); }
         .text-main { color: var(--color-text-light); }
         .text-heading { color: #1A202C; }
         .border-card { border-color: #E2E8F0; }
         .bg-app { background-color: var(--color-bg-light); }
-        .sidebar-bg { background-color: rgba(255, 255, 255, 0.8); }
+        .sidebar-bg { 
+            background-color: rgba(255, 255, 255, 0.8); 
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
 
         /* --- Dark Mode --- */
         .dark body {
@@ -373,23 +860,62 @@
         .dark .bg-card { background-color: var(--color-card-dark); }
         .dark .text-main { color: var(--color-text-dark); }
         .dark .text-heading { color: #FFFFFF; }
-        .dark .border-card { border-color: #334155; }
+        .dark .border-card { border-color: var(--color-border-dark); }
         .dark .bg-app { background-color: var(--color-bg-dark); }
         .dark .sidebar-bg { 
             background-color: rgba(30, 41, 59, 0.7); /* Glassmorphism Effect */
             backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
         }
 
         /* --- Primary Color --- */
         .text-primary { color: var(--color-primary); }
         .bg-primary { background-color: var(--color-primary); }
         .border-primary { border-color: var(--color-primary); }
-        .btn-primary {
-            background-color: var(--color-primary); color: #FFFFFF;
-            padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-weight: 600;
-            transition: background-color 0.3s ease;
+        .shadow-primary { box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.3), 0 8px 10px -6px rgba(59, 130, 246, 0.2); }
+
+        /* --- Button Styles --- */
+        .btn {
+            padding: 0.65rem 1.25rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid transparent;
+            cursor: pointer;
         }
-        .btn-primary:hover { background-color: var(--color-primary-hover); }
+        .btn-primary {
+            background-color: var(--color-primary);
+            color: #FFFFFF;
+            border-color: var(--color-primary);
+            box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2);
+        }
+        .btn-primary:hover { 
+            background-color: var(--color-primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 7px 10px -1px rgba(59, 130, 246, 0.3);
+        }
+        .btn-secondary {
+            background-color: var(--color-card-dark);
+            color: var(--color-text-dark);
+            border-color: var(--color-border-dark);
+        }
+        .dark .btn-secondary {
+            background-color: var(--color-card-dark);
+            color: var(--color-text-dark);
+            border-color: var(--color-border-dark);
+        }
+        .light .btn-secondary {
+            background-color: var(--color-card-light);
+            color: var(--color-text-light);
+            border-color: #E2E8F0;
+        }
+        .btn-secondary:hover {
+            border-color: var(--color-primary);
+            color: var(--color-primary);
+        }
 
         /* --- App Layout --- */
         #app-layout {
@@ -404,6 +930,7 @@
         
         #sidebar {
             transition: transform 0.3s ease-out;
+            will-change: transform;
         }
         
         /* --- Page Sections (CRITICAL FIX) --- */
@@ -413,55 +940,221 @@
         }
         .page-section.active {
             display: block; /* Sirf active page ko show karein */
-            animation: pageFadeIn 0.4s ease-out;
+            animation: pageFadeIn 0.5s cubic-bezier(0.215, 0.610, 0.355, 1.000);
         }
         
         #main-content {
             transition: opacity 0.2s ease-out;
         }
         
+        /* --- Advanced Animations (Naya Feature) --- */
         @keyframes pageFadeIn {
-            from { opacity: 0; transform: translateY(10px); }
+            from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Nav link active state */
+        @keyframes modalFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes modalSlideIn {
+            from { opacity: 0; transform: translateY(50px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        
+        .modal-enter {
+            animation: modalFadeIn 0.3s ease-out;
+        }
+        .modal-content-enter {
+            animation: modalSlideIn 0.3s cubic-bezier(0.215, 0.610, 0.355, 1.000);
+        }
+
+        /* --- Navigation Link Styles --- */
+        .nav-link {
+            transition: all 0.3s ease;
+            transform-origin: left;
+        }
+        .nav-link:hover {
+            background-color: var(--color-primary-light);
+            color: var(--color-primary);
+            transform: translateX(5px);
+        }
         .nav-link.active {
             background-color: var(--color-primary);
             color: #FFFFFF;
             font-weight: 600;
+            box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2);
+        }
+        .nav-link.active:hover {
+            background-color: var(--color-primary-hover);
+            color: #FFFFFF;
+            transform: translateX(0);
         }
         
-        /* Form Inputs */
+        /* --- Form Inputs --- */
         .form-input {
             width: 100%; padding: 0.75rem 1rem; border-radius: 0.5rem;
             transition: border-color 0.3s ease, box-shadow 0.3s ease;
+            border: 1px solid;
         }
         .dark .form-input {
-             border: 1px solid #475569; background-color: #1E293B; color: #E2E8F0;
+             border-color: var(--color-border-dark); 
+             background-color: #1E293B; color: #E2E8F0;
         }
         .light .form-input {
-            border: 1px solid #CBD5E1; background-color: #FFFFFF; color: #1A202C;
+            border-color: #CBD5E1; 
+            background-color: #FFFFFF; color: #1A202C;
         }
         .form-input:focus {
             outline: none; border-color: var(--color-primary);
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+            box-shadow: 0 0 0 3px var(--color-primary-light);
+        }
+        .form-label {
+            display: block; text-sm font-medium text-main mb-2;
+        }
+        /* Checkbox styling */
+        .form-checkbox {
+            appearance: none;
+            width: 1.25rem; height: 1.25rem;
+            border: 2px solid;
+            border-radius: 0.25rem;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            vertical-align: middle;
+        }
+        .dark .form-checkbox { border-color: var(--color-border-dark); }
+        .light .form-checkbox { border-color: #CBD5E1; }
+        
+        .form-checkbox:checked {
+            background-color: var(--color-primary);
+            border-color: var(--color-primary);
+            background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3e%3c/svg%3e");
         }
         
-        /* Chat Scrollbar */
+        /* --- Chat Scrollbar --- */
         #chat-messages {
-            -ms-overflow-style: none;  /* IE and Edge */
-            scrollbar-width: none;  /* Firefox */
+            -ms-overflow-style: none;
+            scrollbar-width: none;
         }
         #chat-messages::-webkit-scrollbar {
-            display: none; /* Chrome, Safari, Opera */
+            display: none;
         }
+        
+        /* --- Table Styling (Naya Feature) --- */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .data-table th, .data-table td {
+            text-align: left;
+            padding: 1rem;
+        }
+        .data-table thead {
+            border-bottom: 2px solid;
+        }
+        .dark .data-table thead { border-color: var(--color-border-dark); }
+        .light .data-table thead { border-color: #E2E8F0; }
+        
+        .data-table th {
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+            font-weight: 700;
+        }
+        
+        /* --- Multi-Step Form (Naya Feature) --- */
+        .form-step-indicator {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+        .step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 10;
+        }
+        .step-circle {
+            width: 2.5rem; height: 2.5rem;
+            border-radius: 9999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            transition: all 0.3s ease;
+        }
+        .step-title {
+            margin-top: 0.5rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+        
+        .dark .step-circle { background-color: var(--color-border-dark); color: var(--color-text-dark); }
+        .light .step-circle { background-color: #E2E8F0; color: var(--color-text-light); }
+        
+        .step.active .step-circle {
+            background-color: var(--color-primary);
+            color: white;
+        }
+        .step.active .step-title {
+            color: var(--color-primary);
+        }
+        
+        /* Step Connector Line */
+        .form-step-indicator::before {
+            content: '';
+            position: absolute;
+            top: 1.25rem; /* halfway through step-circle */
+            left: 10%;
+            right: 10%;
+            height: 2px;
+            z-index: 5;
+        }
+        .dark .form-step-indicator::before { background-color: var(--color-border-dark); }
+        .light .form-step-indicator::before { background-color: #E2E8F0; }
+
+        /* --- Page Headers --- */
+        .page-header {
+            font-size: 2.5rem; /* 40px */
+            font-weight: 800;
+            color: var(--text-heading);
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid;
+        }
+        .dark .page-header { border-color: var(--color-border-dark); }
+        .light .page-header { border-color: #E2E8F0; }
+        
+        /* --- Stats Card (Dashboard) --- */
+        .stat-card {
+            background-color: var(--bg-card);
+            border-radius: 0.75rem;
+            border: 1px solid;
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+        }
+        .dark .stat-card { border-color: var(--color-border-dark); }
+        .light .stat-card { border-color: #E2E8F0; }
+        
+        .stat-card-icon {
+            width: 3.5rem; height: 3.5rem;
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 1rem;
+            font-size: 1.75rem;
+            color: white;
+        }
+
     </style>
 </head>
 <body class="min-h-screen">
 
     <!-- ===== Page 1: Login / Sign Up ===== -->
-    <!-- Yeh by default visible hai -->
     <div id="login-page" class="flex items-center justify-center min-h-screen bg-app p-4">
         <div class="w-full max-w-md">
             <h1 class="text-3xl font-bold text-center text-heading mb-4">
@@ -469,7 +1162,7 @@
             </h1>
             <p class="text-center text-main mb-8">The All-in-One Creator Platform</p>
             
-            <div class="bg-card p-8 rounded-xl border border-card shadow-lg">
+            <div class="bg-card p-8 rounded-xl border border-card shadow-2xl">
                 <!-- Tabs -->
                 <div class="flex border-b border-card mb-6">
                     <button id="login-tab" class="w-1/2 py-4 text-center font-semibold border-b-2 border-primary text-heading">Login</button>
@@ -479,27 +1172,27 @@
                 <!-- Login Form -->
                 <form id="login-form" class="space-y-6">
                     <div>
-                        <label for="login-email" class="block text-sm font-medium text-main mb-2">Email</label>
+                        <label for="login-email" class="form-label">Email</label>
                         <input type="email" name="email" id="login-email" class="form-input" required>
                     </div>
                     <div>
-                        <label for="login-password" class="block text-sm font-medium text-main mb-2">Password</label>
+                        <label for="login-password" class="form-label">Password</label>
                         <input type="password" name="password" id="login-password" class="form-input" required>
                     </div>
-                    <div><button type="submit" class="btn-primary w-full">Login</button></div>
+                    <div><button type="submit" class="btn btn-primary w-full">Login</button></div>
                 </form>
                 
                 <!-- Sign Up Form -->
                 <form id="signup-form" class="space-y-6 hidden">
                     <div>
-                        <label for="signup-email" class="block text-sm font-medium text-main mb-2">Email</label>
+                        <label for="signup-email" class="form-label">Email</label>
                         <input type="email" name="email" id="signup-email" class="form-input" required>
                     </div>
                     <div>
-                        <label for="signup-password" class="block text-sm font-medium text-main mb-2">Password</label>
+                        <label for="signup-password" class="form-label">Password (Min. 6 characters)</label>
                         <input type="password" name="password" id="signup-password" class="form-input" required>
                     </div>
-                    <div><button type="submit" class="btn-primary w-full">Create Account</button></div>
+                    <div><button type="submit" class="btn btn-primary w-full">Create Account</button></div>
                 </form>
                 
                 <p id="login-status" class="text-red-500 mt-4 text-center"></p>
@@ -508,49 +1201,70 @@
     </div>
     
     <!-- ===== Page 2: Main App Layout (Hidden by default) ===== -->
-    <!-- Yeh JS se visible hoga jab login ho jaayega -->
     <div id="app-layout" class="hidden">
     
         <!-- Sidebar (Navigation) -->
         <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 w-72 sidebar-bg border-r border-card flex-col flex p-6
-                            transform -translate-x-full md:translate-x-0 md:fixed">
+                            transform -translate-x-full md:translate-x-0 md:fixed overflow-y-auto">
             <!-- Logo -->
-            <a href="#" class="nav-link text-2xl font-bold text-heading mb-10" data-page="dashboard">
+            <a href="#" class="nav-link text-2xl font-bold text-heading mb-10 p-0" data-page="dashboard">
                 R.S Films <span class="text-primary">Group</span>
             </a>
             
             <!-- Navigation Links -->
             <nav class="flex-grow space-y-2">
+                <p class="text-xs font-semibold text-main uppercase tracking-wider mb-2 mt-4 px-3">Menu</p>
                 <a href="#" class="nav-link text-main flex items-center p-3 rounded-lg" data-page="dashboard">
                     <ion-icon name="grid-outline" class="text-xl mr-3"></ion-icon> Dashboard
                 </a>
-                <a href="#" class="nav-link text-main flex items-center p-3 rounded-lg" data-page="pricing">
+                <a href="#" class="nav-link text-main flex items-center p-3 rounded-lg" data-page="chat">
+                    <ion-icon name="chatbubbles-outline" class="text-xl mr-3"></ion-icon> Community Chat
+                </a>
+                
+                <p class="text-xs font-semibold text-main uppercase tracking-wider mb-2 mt-4 px-3">Services</p>
+                 <a href="#" class="nav-link text-main flex items-center p-3 rounded-lg" data-page="pricing">
                     <ion-icon name="pricetags-outline" class="text-xl mr-3"></ion-icon> Services & Pricing
                 </a>
+                <a href="#" class="nav-link text-main flex items-center p-3 rounded-lg" data-page="music-form">
+                    <ion-icon name="musical-notes-outline" class="text-xl mr-3"></ion-icon> Music Distribution
+                </a>
+                <a href="#" class="nav-link text-main flex items-center p-3 rounded-lg" data-page="mcn-form">
+                    <ion-icon name="tv-outline" class="text-xl mr-3"></ion-icon> MCN Application
+                </a>
+                
+                <p class="text-xs font-semibold text-main uppercase tracking-wider mb-2 mt-4 px-3">Bazaar</p>
                 <a href="#" class="nav-link text-main flex items-center p-3 rounded-lg" data-page="hire">
                     <ion-icon name="person-add-outline" class="text-xl mr-3"></ion-icon> Hire a Professional
                 </a>
                 <a href="#" class="nav-link text-main flex items-center p-3 rounded-lg" data-page="store">
                     <ion-icon name="storefront-outline" class="text-xl mr-3"></ion-icon> Digital Store
                 </a>
-                <a href="#" class="nav-link text-main flex items-center p-3 rounded-lg" data-page="portfolio">
+               
+                <p class="text-xs font-semibold text-main uppercase tracking-wider mb-2 mt-4 px-3">Company</p>
+                 <a href="#" class="nav-link text-main flex items-center p-3 rounded-lg" data-page="portfolio">
                     <ion-icon name="images-outline" class="text-xl mr-3"></ion-icon> Latest Work
                 </a>
                 <a href="#" class="nav-link text-main flex items-center p-3 rounded-lg" data-page="clients">
                     <ion-icon name="people-outline" class="text-xl mr-3"></ion-icon> Humare Clients
                 </a>
-                <a href="#" class="nav-link text-main flex items-center p-3 rounded-lg" data-page="chat">
-                    <ion-icon name="chatbubbles-outline" class="text-xl mr-3"></ion-icon> Community Chat
+                <a href="#" class="nav-link text-main flex items-center p-3 rounded-lg" data-page="client-data">
+                    <ion-icon name="server-outline" class="text-xl mr-3"></ion-icon> Client Data
                 </a>
             </nav>
             
             <!-- User Profile (Bottom) -->
             <div class="mt-auto">
                 <div class="border-t border-card pt-6">
-                    <p class="text-sm text-main" id="user-email-sidebar">Loading...</p>
-                    <a href="#" class="nav-link text-red-500 text-sm font-semibold" data-page="sign-out">
-                        Sign Out
-                    </a>
+                    <h4 id="user-display-name-sidebar" class="font-semibold text-heading">Loading...</h4>
+                    <p class="text-sm text-main truncate" id="user-email-sidebar">Loading...</p>
+                    <div class="flex items-center justify-between mt-4">
+                         <a href="#" class="nav-link text-main text-sm p-2" data-page="settings">
+                            <ion-icon name="settings-outline" class="text-xl"></ion-icon>
+                        </a>
+                        <a href="#" class="nav-link text-red-500 text-sm font-semibold p-2" data-page="sign-out">
+                            <ion-icon name="log-out-outline" class="text-xl"></ion-icon>
+                        </a>
+                    </div>
                 </div>
             </div>
         </aside>
@@ -564,7 +1278,7 @@
                     <ion-icon name="menu-outline" class="text-3xl"></ion-icon>
                 </button>
                 <h2 class="text-xl font-bold text-heading">R.S Films</h2>
-                <button id="theme-toggle" class="text-main">
+                <button id="theme-toggle-mobile" class="text-main">
                     <!-- Icon JS se set hoga -->
                 </button>
             </header>
@@ -573,175 +1287,206 @@
             <main id="main-content" class="p-6 md:p-12">
             
                 <!-- ===== Dashboard Page ===== -->
-                <!-- FIX: 'active' class add kiya taaki yeh login ke baad default dikhe -->
                 <section id="page-dashboard" class="page-section active">
-                    <h1 class="text-4xl font-bold text-heading mb-8">Welcome to your Dashboard</h1>
-                    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <a href="#" data-page="hire" class="nav-link bg-card p-6 rounded-xl border border-card hover:border-primary transition-all">
-                            <ion-icon name="person-add-outline" class="text-4xl text-primary mb-3"></ion-icon>
-                            <h3 class="text-2xl font-semibold text-heading">Hire a Pro</h3>
-                            <p class="text-main">Video Editors, Designers, aur bhi bahut kuch.</p>
-                        </a>
-                        <a href="#" data-page="store" class="nav-link bg-card p-6 rounded-xl border border-card hover:border-primary transition-all">
-                            <ion-icon name="storefront-outline" class="text-4xl text-green-500 mb-3"></ion-icon>
-                            <h3 class="text-2xl font-semibold text-heading">Digital Store</h3>
-                            <p class="text-main">Poster PSDs, Video LUTs aur templates khareedein.</p>
-                        </a>
-                        <a href="#" data-page="pricing" class="nav-link bg-card p-6 rounded-xl border border-card hover:border-primary transition-all">
-                            <ion-icon name="pricetags-outline" class="text-4xl text-yellow-500 mb-3"></ion-hidden>
-                            <h3 class="text-2xl font-semibold text-heading">Humare Plans</h3>
-                            <p class="text-main">Channel management ke liye humare plans dekhein.</p>
-                        </a>
+                    <h1 class="page-header">Dashboard</h1>
+                    
+                    <!-- Stats Cards (Naya Feature) -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                        <div class="stat-card">
+                            <div class="stat-card-icon bg-primary"><ion-icon name="cash-outline"></ion-icon></div>
+                            <div>
+                                <p class="text-sm text-main uppercase font-semibold">Total Revenue</p>
+                                <p class="text-3xl font-bold text-heading">$8,120</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-card-icon bg-green-500"><ion-icon name="people-outline"></ion-icon></div>
+                            <div>
+                                <p class="text-sm text-main uppercase font-semibold">Total Clients</p>
+                                <p class="text-3xl font-bold text-heading">124</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-card-icon bg-yellow-500"><ion-icon name="hourglass-outline"></ion-icon></div>
+                            <div>
+                                <p class="text-sm text-main uppercase font-semibold">Pending Projects</p>
+                                <p class="text-3xl font-bold text-heading">15</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-card-icon bg-red-500"><ion-icon name="chatbubbles-outline"></ion-icon></div>
+                            <div>
+                                <p class="text-sm text-main uppercase font-semibold">New Messages</p>
+                                <p class="text-3xl font-bold text-heading">8</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Charts (Naya Feature) -->
+                    <div class="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-8">
+                        <!-- Revenue Chart -->
+                        <div class="lg:col-span-3 bg-card border border-card rounded-lg p-6">
+                            <h3 class="text-xl font-semibold text-heading mb-4">Revenue Analytics (Last 7 Months)</h3>
+                            <div class="h-80"><canvas id="revenueChart"></canvas></div>
+                        </div>
+                        <!-- Subscriber Chart -->
+                        <div class="lg:col-span-2 bg-card border border-card rounded-lg p-6">
+                            <h3 class="text-xl font-semibold text-heading mb-4">New Subscribers</h3>
+                            <div class="h-80"><canvas id="subscriberChart"></canvas></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Recent Activity (Naya Feature) -->
+                    <div class="bg-card border border-card rounded-lg p-6">
+                        <h3 class="text-xl font-semibold text-heading mb-4">Recent Activity</h3>
+                        <ul class="space-y-4">
+                            <li class="flex items-center">
+                                <span class="p-2 rounded-full bg-primary-light mr-4"><ion-icon name="musical-notes-outline" class="text-primary"></ion-icon></span>
+                                <p class="text-main">New music submission from <span class="font-semibold text-heading">"Artist Name"</span> for song "Song Title".</p>
+                            </li>
+                            <li class="flex items-center">
+                                <span class="p-2 rounded-full bg-green-100 mr-4"><ion-icon name="person-add-outline" class="text-green-500"></ion-icon></span>
+                                <p class="text-main">New user <span class="font-semibold text-heading">"client@email.com"</span> just signed up.</p>
+                            </li>
+                             <li class="flex items-center">
+                                <span class="p-2 rounded-full bg-yellow-100 mr-4"><ion-icon name="storefront-outline" class="text-yellow-500"></ion-icon></span>
+                                <p class="text-main"><span class="font-semibold text-heading">"client@email.com"</span> purchased "Cinematic LUT Pack".</p>
+                            </li>
+                        </ul>
                     </div>
                 </section>
                 
                 <!-- ===== Pricing Page ===== -->
                 <section id="page-pricing" class="page-section">
-                    <h1 class="text-4xl font-bold text-heading text-center mb-16">Services & Pricing Plans</h1>
-                    <div class="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-                        <!-- Plan 1 -->
-                        <div class="bg-card p-8 rounded-xl border border-card flex flex-col">
-                            <h3 class="text-2xl font-semibold text-heading mb-4">Silver Plan</h3>
-                            <p class="text-4xl font-bold text-heading mb-6">$99 <span class="text-lg font-normal text-main">/month</span></p>
-                            <ul class="space-y-3 text-main mb-8 flex-grow">
-                                <li><ion-icon name="checkmark-outline" class="text-green-500"></ion-icon> 2 Video Editing</li>
-                                <li><ion-icon name="checkmark-outline" class="text-green-500"></ion-icon> 5 Graphic Posters</li>
-                                <li><ion-icon name="checkmark-outline" class="text-green-500"></ion-icon> Basic SEO</li>
-                            </ul>
-                            <button class="btn-primary w-full">Choose Plan</button>
-                        </div>
-                        <!-- Plan 2 (Featured) -->
-                        <div class="bg-card p-8 rounded-xl border-2 border-primary flex flex-col shadow-2xl shadow-primary/20">
-                            <h3 class="text-2xl font-semibold text-primary mb-4">Gold Plan (Popular)</h3>
-                            <p class="text-4xl font-bold text-heading mb-6">$299 <span class="text-lg font-normal text-main">/month</span></p>
-                            <ul class="space-y-3 text-main mb-8 flex-grow">
-                                <li><ion-icon name="checkmark-outline" class="text-green-500"></ion-icon> 8 Video Editing</li>
-                                <li><ion-icon name="checkmark-outline" class="text-green-500"></ion-icon> 15 Graphic Posters</li>
-                                <li><ion-icon name="checkmark-outline" class="text-green-500"></ion-icon> Full Channel SEO</li>
-                                <li><ion-icon name="checkmark-outline" class="text-green-500"></ion-icon> YouTube Management</li>
-                            </ul>
-                            <button class="btn-primary w-full">Choose Plan</button>
-                        </div>
-                        <!-- Plan 3 -->
-                        <div class="bg-card p-8 rounded-xl border border-card flex flex-col">
-                            <h3 class="text-2xl font-semibold text-heading mb-4">Platinum Plan</h3>
-                            <p class="text-4xl font-bold text-heading mb-6">$599 <span class="text-lg font-normal text-main">/month</span></p>
-                            <ul class="space-y-3 text-main mb-8 flex-grow">
-                                <li><ion-icon name="checkmark-outline" class="text-green-500"></ion-icon> 20 Video Editing</li>
-                                <li><ion-icon name="checkmark-outline" class="text-green-500"></ion-icon> Unlimited Posters</li>
-                                <li><ion-icon name="checkmark-outline" class="text-green-500"></ion-icon> Full Channel Management</li>
-                                <li><ion-icon name="checkmark-outline" class="text-green-500"></ion-icon> Video Shooting (1/month)</li>
-                            </ul>
-                            <button class="btn-primary w-full">Choose Plan</button>
-                        </div>
+                    <h1 class="page-header text-center">Services & Pricing Plans</h1>
+                    <p class="text-center text-lg text-main max-w-2xl mx-auto mb-16">
+                        Aapke creative needs ke liye perfect plan. Hum YouTube, Instagram, aur Facebook management offer karte hain.
+                    </p>
+                    
+                    <!-- Pricing Table (Advanced) -->
+                    <div class="bg-card border border-card rounded-lg shadow-lg overflow-x-auto">
+                        <table class="w-full min-w-[1000px]">
+                            <thead>
+                                <tr class="border-b border-card">
+                                    <th class="p-6 text-left text-xl font-semibold text-heading w-1/4">Features</th>
+                                    <th class="p-6 text-center w-1/4">
+                                        <h3 class="text-xl font-semibold text-heading">Silver Plan</h3>
+                                        <p class="text-3xl font-bold text-heading my-2">$99</p>
+                                        <button class="btn btn-secondary w-full">Choose</button>
+                                    </th>
+                                    <th class="p-6 text-center w-1/4 border-x border-card bg-primary-light">
+                                        <h3 class="text-xl font-semibold text-primary">Gold Plan (Popular)</h3>
+                                        <p class="text-3xl font-bold text-heading my-2">$299</p>
+                                        <button class="btn btn-primary w-full">Choose</button>
+                                    </th>
+                                    <th class="p-6 text-center w-1/4">
+                                        <h3 class="text-xl font-semibold text-heading">Platinum Plan</h3>
+                                        <p class="text-3xl font-bold text-heading my-2">$599</p>
+                                        <button class="btn btn-secondary w-full">Choose</button>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Section 1 -->
+                                <tr class="border-b border-card"><td colspan="4" class="p-4 bg-app font-semibold text-heading">Channel Management</td></tr>
+                                <tr class="border-b border-card">
+                                    <td class="p-4 text-main">YouTube Video Uploads</td>
+                                    <td class="p-4 text-center text-heading font-medium">10 / month</td>
+                                    <td class="p-4 text-center text-heading font-medium bg-primary-light">30 / month</td>
+                                    <td class="p-4 text-center text-heading font-medium">Unlimited</td>
+                                </tr>
+                                <tr class="border-b border-card">
+                                    <td class="p-4 text-main">YouTube SEO & Metadata</td>
+                                    <td class="p-4 text-center text-green-500"><ion-icon name="checkmark-outline" class="text-2xl"></ion-icon></td>
+                                    <td class="p-4 text-center text-green-500 bg-primary-light"><ion-icon name="checkmark-outline" class="text-2xl"></ion-icon></td>
+                                    <td class="p-4 text-center text-green-500"><ion-icon name="checkmark-outline" class="text-2xl"></ion-icon></td>
+                                </tr>
+                                 <tr class="border-b border-card">
+                                    <td class="p-4 text-main">Instagram / FB Posts</td>
+                                    <td class="p-4 text-center text-heading font-medium">15 / month</td>
+                                    <td class="p-4 text-center text-heading font-medium bg-primary-light">30 / month</td>
+                                    <td class="p-4 text-center text-heading font-medium">Unlimited</td>
+                                </tr>
+                                <!-- Section 2 -->
+                                <tr class="border-b border-card"><td colspan="4" class="p-4 bg-app font-semibold text-heading">Production</td></tr>
+                                 <tr class="border-b border-card">
+                                    <td class="p-4 text-main">Video Editing</td>
+                                    <td class="p-4 text-center text-heading font-medium">5 Videos</td>
+                                    <td class="p-4 text-center text-heading font-medium bg-primary-light">15 Videos</td>
+                                    <td class="p-4 text-center text-heading font-medium">Unlimited</td>
+                                </tr>
+                                <tr class="border-b border-card">
+                                    <td class="p-4 text-main">Graphic Posters / Thumbnails</td>
+                                    <td class="p-4 text-center text-heading font-medium">10 Designs</td>
+                                    <td class="p-4 text-center text-heading font-medium bg-primary-light">30 Designs</td>
+                                    <td class="p-4 text-center text-heading font-medium">Unlimited</td>
+                                </tr>
+                                <tr class="border-b border-card">
+                                    <td class="p-4 text-main">Video Shooting</td>
+                                    <td class="p-4 text-center text-red-500"><ion-icon name="close-outline" class="text-2xl"></ion-icon></td>
+                                    <td class="p-4 text-center text-red-500 bg-primary-light"><ion-icon name="close-outline" class="text-2xl"></ion-icon></td>
+                                    <td class="p-4 text-center text-green-500"><ion-icon name="checkmark-outline" class="text-2xl"></ion-icon></td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </section>
                 
                 <!-- ===== Hire a Pro Page ===== -->
                 <section id="page-hire" class="page-section">
-                    <h1 class="text-4xl font-bold text-heading mb-16">Hire a Professional</h1>
-                    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <!-- Profile Card 1 -->
-                        <div class="bg-card p-6 rounded-xl border border-card text-center">
-                            <img src="https://placehold.co/100x100/3B82F6/FFFFFF?text=Editor" alt="Editor" class="w-24 h-24 rounded-full mx-auto mb-4">
-                            <h3 class="text-2xl font-semibold text-heading">Rohan Sharma</h3>
-                            <p class="text-primary font-medium mb-2">Pro Video Editor</p>
-                            <p class="text-main mb-4">5+ saal ka experience music videos aur vlogs mein.</p>
-                            <button class="btn-primary w-full">Hire Me</button>
-                        </div>
-                        <!-- Profile Card 2 -->
-                        <div class="bg-card p-6 rounded-xl border border-card text-center">
-                            <img src="https://placehold.co/100x100/10B981/FFFFFF?text=Designer" alt="Designer" class="w-24 h-24 rounded-full mx-auto mb-4">
-                            <h3 class="text-2xl font-semibold text-heading">Priya Singh</h3>
-                            <p class="text-green-500 font-medium mb-2">Graphic Designer</p>
-                            <p class="text-main mb-4">Aapke gaano ke liye attractive posters aur thumbnails.</p>
-                            <button class="btn-primary w-full">Hire Me</button>
-                        </div>
-                        <!-- Profile Card 3 -->
-                        <div class="bg-card p-6 rounded-xl border border-card text-center">
-                            <img src="https://placehold.co/100x100/EF4444/FFFFFF?text=Manager" alt="Manager" class="w-24 h-24 rounded-full mx-auto mb-4">
-                            <h3 class="text-2xl font-semibold text-heading">Vikram Kumar</h3>
-                            <p class="text-red-500 font-medium mb-2">Channel Manager</p>
-                            <p class="text-main mb-4">Aapke YouTube channel ki growth aur management.</p>
-                            <button classs="btn-primary w-full">Hire Me</button>
-                        </div>
+                    <h1 class="page-header">Hire a Professional</h1>
+                    <!-- Filters (Naya Feature) -->
+                    <div class="flex flex-wrap gap-2 mb-8">
+                        <button class="btn btn-secondary hire-filter-btn" data-filter="all">All Professionals</button>
+                        <button class="btn btn-secondary hire-filter-btn" data-filter="Pro Video Editor">Video Editors</button>
+                        <button class="btn btn-secondary hire-filter-btn" data-filter="Graphic Designer">Graphic Designers</button>
+                        <button class="btn btn-secondary hire-filter-btn" data-filter="Channel Manager">Channel Managers</button>
+                        <button class="btn btn-secondary hire-filter-btn" data-filter="Audio Engineer">Audio Engineers</button>
+                    </div>
+                    <!-- Profile Cards -->
+                    <div id="hire-card-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <!-- JS se populate hoga -->
+                        <p class="text-main">Loading professionals...</p>
                     </div>
                 </section>
                 
                 <!-- ===== Digital Store Page ===== -->
                 <section id="page-store" class="page-section">
-                    <h1 class="text-4xl font-bold text-heading mb-16">Digital Asset Store</h1>
-                    <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        <!-- Product 1 -->
-                        <div class="bg-card rounded-xl border border-card overflow-hidden">
-                            <img src="https://placehold.co/600x400/3B82F6/FFFFFF?text=Music+Poster+PSD" alt="PSD" class="w-full h-48 object-cover">
-                            <div class="p-4">
-                                <h3 class="text-xl font-semibold text-heading mb-2">Music Poster PSD Vol. 1</h3>
-                                <p class="text-2xl font-bold text-primary mb-4">$10</p>
-                                <button class="btn-primary w-full">Buy Now</button>
-                            </div>
-                        </div>
-                        <!-- Product 2 -->
-                        <div class="bg-card rounded-xl border border-card overflow-hidden">
-                            <img src="https://placehold.co/600x400/F59E0B/FFFFFF?text=Cinematic+LUTs" alt="LUTs" class="w-full h-48 object-cover">
-                            <div class="p-4">
-                                <h3 class="text-xl font-semibold text-heading mb-2">Cinematic LUT Pack</h3>
-                                <p class="text-2xl font-bold text-primary mb-4">$25</p>
-                                <button class="btn-primary w-full">Buy Now</button>
-                            </div>
-                        </div>
-                        <!-- Product 3 -->
-                        <div class="bg-card rounded-xl border border-card overflow-hidden">
-                            <img src="https://placehold.co/600x400/10B981/FFFFFF?text=Vlog+Templates" alt="Templates" class="w-full h-48 object-cover">
-                            <div class="p-4">
-                                <h3 class="text-xl font-semibold text-heading mb-2">Vlog Editing Templates</h3>
-                                <p class="text-2xl font-bold text-primary mb-4">$15</p>
-                                <button class="btn-primary w-full">Buy Now</button>
-                            </div>
-                        </div>
-                        <!-- Product 4 -->
-                        <div class="bg-card rounded-xl border border-card overflow-hidden">
-                            <img src="https://placehold.co/600x400/EF4444/FFFFFF?text=Thumbnails" alt="Thumbnails" class="w-full h-48 object-cover">
-                            <div class="p-4">
-                                <h3 class="text-xl font-semibold text-heading mb-2">YouTube Thumbnail Pack</h3>
-                                <p class="text-2xl font-bold text-primary mb-4">$5</p>
-                                <button class="btn-primary w-full">Buy Now</button>
-                            </div>
-                        </div>
+                    <h1 class="page-header">Digital Asset Store</h1>
+                    <!-- Filters (Naya Feature) -->
+                    <div class="flex flex-wrap gap-2 mb-8">
+                        <button class="btn btn-secondary store-filter-btn" data-filter="all">All Products</button>
+                        <button class="btn btn-secondary store-filter-btn" data-filter="psd">Poster PSDs</button>
+                        <button class="btn btn-secondary store-filter-btn" data-filter="luts">Video LUTs</button>
+                        <button class="btn btn-secondary store-filter-btn" data-filter="templates">Editing Templates</button>
+                    </div>
+                    <!-- Product Cards -->
+                    <div id="store-card-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <!-- JS se populate hoga -->
+                        <p class="text-main">Loading products...</p>
                     </div>
                 </section>
                 
                 <!-- ===== Latest Work Page ===== -->
                 <section id="page-portfolio" class="page-section">
-                    <h1 class="text-4xl font-bold text-heading mb-16">Humara Latest Work</h1>
-                    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <img src="https://placehold.co/600x400/8B5CF6/FFFFFF?text=Music+Video" alt="Work 1" class="rounded-lg shadow-lg">
-                        <img src="https://placehold.co/600x400/EC4899/FFFFFF?text=Poster+Design" alt="Work 2" class="rounded-lg shadow-lg">
-                        <img src="https://placehold.co/600x400/F59E0B/FFFFFF?text=Channel+Art" alt="Work 3" class="rounded-lg shadow-lg">
-                        <img src="https://placehold.co/600x400/10B981/FFFFFF?text=Short+Film" alt="Work 4" class="rounded-lg shadow-lg">
-                        <img src="https://placehold.co/600x400/3B82F6/FFFFFF?text=Vlog+Edit" alt="Work 5" class="rounded-lg shadow-lg">
+                    <h1 class="page-header">Humara Latest Work</h1>
+                    <div id="portfolio-card-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <!-- JS se populate hoga (mock data reuse) -->
                     </div>
                 </section>
                 
                 <!-- ===== Clients Page ===== -->
                 <section id="page-clients" class="page-section">
-                    <h1 class="text-4xl font-bold text-heading text-center mb-16">Humare Saath Jude Clients</h1>
-                    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8">
-                        <div class="bg-card p-6 rounded-xl border border-card flex flex-col items-center justify-center aspect-square">
-                            <img src="https://placehold.co/100x100/3B82F6/FFFFFF?text=Client+1" alt="Client Logo 1" class="w-24 h-24 rounded-full mb-4 object-cover">
-                            <h3 class="text-xl font-semibold text-heading text-center">Client Ka Naam</h3>
-                        </div>
-                        <div class="bg-card p-6 rounded-xl border border-card flex flex-col items-center justify-center aspect-square">
-                            <img src="https://placehold.co/100x100/10B981/FFFFFF?text=Client+2" alt="Client Logo 2" class="w-24 h-24 rounded-full mb-4 object-cover">
-                            <h3 class="text-xl font-semibold text-heading text-center">Channel Name</h3>
-                        </div>
+                    <h1 class="page-header">Humare Clients</h1>
+                     <div id="clients-card-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <!-- JS se populate hoga (mock data reuse) -->
                     </div>
                 </section>
                 
                 <!-- ===== Community Chat Page ===== -->
                 <section id="page-chat" class="page-section">
-                    <h1 class="text-4xl font-bold text-heading mb-8">Community Chat</h1>
-                    <div class="bg-card border border-card rounded-lg flex flex-col h-[70vh]">
+                    <h1 class="page-header">Community Chat</h1>
+                    <div class="bg-card border border-card rounded-lg flex flex-col h-[70vh] shadow-lg">
                         <!-- Chat Messages Area -->
                         <div id="chat-messages" class="flex-grow p-6 overflow-y-auto">
                             <!-- Messages JS se load honge -->
@@ -750,17 +1495,229 @@
                         <!-- Chat Input Form -->
                         <form id="chat-form" class="p-4 border-t border-card flex">
                             <input type="text" id="chat-input" class="form-input flex-grow" placeholder="Type a message..." required>
-                            <button type="submit" class="btn-primary ml-4">
+                            <button type="submit" class="btn btn-primary ml-4">
                                 <ion-icon name="send-outline" class="text-xl"></ion-icon>
                             </button>
                         </form>
                     </div>
                 </section>
+
+                <!-- ===== Music Distribution Form Page (Naya Feature) ===== -->
+                <section id="page-music-form" class="page-section">
+                    <h1 class="page-header">Music Distribution Form</h1>
+                    <div class="bg-card border border-card rounded-lg shadow-lg max-w-3xl mx-auto">
+                        <form id="music-dist-form">
+                            <!-- Step Indicator -->
+                            <div class="form-step-indicator p-6 border-b border-card">
+                                <div class="step active" data-step="1">
+                                    <div class="step-circle">1</div>
+                                    <div class="step-title">Artist Info</div>
+                                </div>
+                                <div class="step" data-step="2">
+                                    <div class="step-circle">2</div>
+                                    <div class="step-title">Song Info</div>
+                                </div>
+                                <div class="step" data-step="3">
+                                    <div class="step-circle">3</div>
+                                    <div class="step-title">Upload</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Step 1 -->
+                            <div class="music-form-step p-6 space-y-4">
+                                <h3 class="text-xl font-semibold text-heading mb-4">Step 1: Artist Details</h3>
+                                <div>
+                                    <label class="form-label" for="artist-name">Artist / Band Name</label>
+                                    <input class="form-input" type="text" name="artist-name" required>
+                                </div>
+                                <div>
+                                    <label class="form-label" for="artist-email">Contact Email</label>
+                                    <input class="form-input" type="email" name="artist-email" required>
+                                </div>
+                                <div class="text-right">
+                                    <button type="button" class="btn btn-primary music-next-btn">Next</button>
+                                </div>
+                            </div>
+                            
+                            <!-- Step 2 -->
+                            <div class="music-form-step hidden p-6 space-y-4">
+                                <h3 class="text-xl font-semibold text-heading mb-4">Step 2: Song Details</h3>
+                                <div>
+                                    <label class="form-label" for="song-title">Song Title</label>
+                                    <input class="form-input" type="text" name="song-title" required>
+                                </div>
+                                <div>
+                                    <label class="form-label" for="release-date">Release Date</label>
+                                    <input class="form-input" type="date" name="release-date" required>
+                                </div>
+                                <div>
+                                    <label class="form-label" for="genre">Genre</label>
+                                    <input class="form-input" type="text" name="genre" required>
+                                </div>
+                                <p class="form-label">Platforms (Jahaan release karna hai)</p>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <label class="flex items-center space-x-2"><input type="checkbox" name="platforms" value="spotify" class="form-checkbox"> <span>Spotify</span></label>
+                                    <label class="flex items-center space-x-2"><input type="checkbox" name="platforms" value="apple" class="form-checkbox"> <span>Apple Music</span></label>
+                                    <label class="flex items-center space-x-2"><input type="checkbox" name="platforms" value="saavn" class="form-checkbox"> <span>JioSaavn</span></label>
+                                    <label class="flex items-center space-x-2"><input type="checkbox" name="platforms" value="yt-music" class="form-checkbox"> <span>YouTube Music</span></label>
+                                </div>
+                                <div class="flex justify-between">
+                                    <button type="button" class="btn btn-secondary music-prev-btn">Previous</button>
+                                    <button type="button" class="btn btn-primary music-next-btn">Next</button>
+                                </div>
+                            </div>
+
+                            <!-- Step 3 -->
+                            <div class="music-form-step hidden p-6 space-y-4">
+                                <h3 class="text-xl font-semibold text-heading mb-4">Step 3: Upload Files</h3>
+                                <div>
+                                    <label class="form-label">Upload Audio (WAV/MP3)</label>
+                                    <input type="file" class="form-input" name="audio-file" accept=".wav,.mp3" required>
+                                </div>
+                                 <div>
+                                    <label class="form-label">Upload Cover Art (JPG/PNG)</label>
+                                    <input type="file" class="form-input" name="cover-art" accept=".jpg,.png" required>
+                                </div>
+                                <p class="text-xs text-main">Note: File upload yahaan simulated hai. Submit karne par sirf data save hoga.</p>
+                                <div class="flex justify-between">
+                                    <button type="button" class="btn btn-secondary music-prev-btn">Previous</button>
+                                    <button type="submit" class="btn btn-primary">Submit Application</button>
+                                </div>
+                                <p id="music-form-status" class="text-center mt-4"></p>
+                            </div>
+                        </form>
+                    </div>
+                </section>
                 
+                <!-- ===== MCN Application Form Page (Naya Feature) ===== -->
+                <section id="page-mcn-form" class="page-section">
+                    <h1 class="page-header">MCN Application Form</h1>
+                    <div class="bg-card border border-card rounded-lg shadow-lg max-w-3xl mx-auto">
+                        <form id="mcn-apply-form">
+                            <!-- Step Indicator -->
+                             <div class="form-step-indicator p-6 border-b border-card">
+                                <div class="step active" data-step="1">
+                                    <div class="step-circle">1</div>
+                                    <div class="step-title">Channel Info</div>
+                                </div>
+                                <div class="step" data-step="2">
+                                    <div class="step-circle">2</div>
+                                    <div class="step-title">Stats</div>
+                                </div>
+                            </div>
+                            <!-- Step 1 -->
+                            <div class="mcn-form-step p-6 space-y-4">
+                                <h3 class="text-xl font-semibold text-heading mb-4">Step 1: Channel Details</h3>
+                                <div>
+                                    <label class="form-label" for="channel-name">Channel Name</label>
+                                    <input class="form-input" type="text" name="channel-name" required>
+                                </div>
+                                <div>
+                                    <label class="form-label" for="channel-link">Channel Link (URL)</label>
+                                    <input class="form-input" type="url" name="channel-link" required>
+                                </div>
+                                <div class="text-right">
+                                    <button type="button" class="btn btn-primary mcn-next-btn">Next</button>
+                                </div>
+                            </div>
+                            <!-- Step 2 -->
+                            <div class="mcn-form-step hidden p-6 space-y-4">
+                                <h3 class="text-xl font-semibold text-heading mb-4">Step 2: Channel Stats</h3>
+                                <div>
+                                    <label class="form-label" for="subscriber-count">Subscriber Count</label>
+                                    <input class="form-input" type="number" name="subscriber-count" required>
+                                </div>
+                                <div>
+                                    <label class="form-label" for="avg-views">Average Views (Last 30 Days)</label>
+                                    <input class="form-input" type="number" name="avg-views" required>
+                                </div>
+                                <div class="flex justify-between">
+                                    <button type="button" class="btn btn-secondary mcn-prev-btn">Previous</button>
+                                    <button type="submit" class="btn btn-primary">Submit Application</button>
+                                </div>
+                                <p id="mcn-form-status" class="text-center mt-4"></p>
+                            </div>
+                        </form>
+                    </div>
+                </section>
+                
+                <!-- ===== Client Data Page (Naya Feature) ===== -->
+                <section id="page-client-data" class="page-section">
+                    <h1 class="page-header">All Clients Data</h1>
+                    <div class="bg-card border border-card rounded-lg shadow-lg overflow-x-auto">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Display Name</th>
+                                    <th>Email</th>
+                                    <th>Phone</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="client-data-table-body">
+                                <!-- JS se populate hoga -->
+                                <tr><td colspan="4" class="p-4 text-center text-main">Loading client data...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+                
+                <!-- ===== Settings Page (Naya Feature) ===== -->
+                <section id="page-settings" class="page-section">
+                    <h1 class="page-header">Account Settings</h1>
+                    <div class="bg-card border border-card rounded-lg shadow-lg max-w-2xl mx-auto p-8">
+                        <form id="settings-form" class="space-y-6">
+                            <div>
+                                <label class="form-label" for="settings-name">Aapka Naam (Display Name)</label>
+                                <input class="form-input" type="text" name="settings-name" id="settings-name">
+                            </div>
+                            <div>
+                                <label class="form-label" for="settings-email">Email Address</label>
+                                <input class="form-input" type="email" name="settings-email" id="settings-email" disabled>
+                                <p class="text-xs text-main mt-1">Email address badla nahi ja sakta.</p>
+                            </div>
+                            <div>
+                                <label class="form-label" for="settings-phone">Phone Number</label>
+                                <input class="form-input" type="tel" name="settings-phone" id="settings-phone">
+                            </div>
+                            <div class="border-t border-card pt-6">
+                                <label class="form-label" for="settings-password">Naya Password (Khali chhodein agar badalna nahi hai)</label>
+                                <input class="form-input" type="password" name="settings-password" id="settings-password" autocomplete="new-password">
+                            </div>
+                            <div>
+                                <button type="submit" class="btn btn-primary">Save Settings</button>
+                            </div>
+                            <p id="settings-status" class="text-center mt-4"></p>
+                        </form>
+                    </div>
+                </section>
+
             </main>
         </div>
         
     </div>
+    
+    <!-- ===== Global Modal (Naya Feature) ===== -->
+    <div id="main-modal" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black bg-opacity-70 backdrop-blur-sm hidden modal-enter">
+        <div class="bg-card rounded-xl border border-card shadow-2xl w-full max-w-2xl modal-content-enter max-h-[90vh] flex flex-col">
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between p-6 border-b border-card">
+                <h2 id="modal-title" class="text-2xl font-semibold text-heading">Modal Title</h2>
+                <button id="modal-close-btn" class="text-main hover:text-red-500 transition-colors">
+                    <ion-icon name="close-outline" class="text-3xl"></ion-icon>
+                </button>
+            </div>
+            <!-- Modal Body -->
+            <div id="modal-body" class="p-6 overflow-y-auto">
+                <!-- Content JS se ayega -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- Top Header (Desktop - Theme Toggle) -->
+    <button id="theme-toggle" class="hidden md:block fixed top-6 right-12 z-50 text-main bg-card p-2 rounded-full border border-card shadow-sm">
+        <!-- Icon JS se set hoga -->
+    </button>
 
 </body>
 </html>
