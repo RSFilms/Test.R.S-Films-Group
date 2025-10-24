@@ -1,723 +1,174 @@
 <!DOCTYPE html>
-<html lang="hi" class="dark">
+<html lang="en" class="scroll-smooth">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>R.S Films Group | The All-in-One Creator Platform</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Font: Inter -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <!-- Ionicons CDN -->
-    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
-    <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
-    
-    <!-- Firebase JS SDK (v11.6.1) -->
-    <script type="module">
-        // Firebase services ko import karein
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { 
-            getAuth, 
-            signInAnonymously, 
-            signInWithCustomToken, 
-            onAuthStateChanged,
-            createUserWithEmailAndPassword,
-            signInWithEmailAndPassword,
-            signOut
-        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { 
-            getFirestore, 
-            collection, 
-            addDoc, 
-            serverTimestamp, 
-            setLogLevel,
-            query,
-            // orderBy, // Note: orderBy requires matching indexes in Firestore, which can cause runtime errors.
-            limit,
-            onSnapshot
-        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        
-        // --- Firebase Initialization ---
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-
-        let db, auth;
-        let currentUserId = null;
-        let currentUserEmail = null;
-        let chatUnsubscribe = null; // Chat listener ko manage karne ke liye
-
-        try {
-            const app = initializeApp(firebaseConfig);
-            db = getFirestore(app);
-            auth = getAuth(app);
-            setLogLevel('Debug'); // Debug logs ke liye
-            console.log("Firebase initialized.");
-        } catch (e) {
-            console.error("Firebase initialization failed:", e);
-        }
-
-        // --- Global App State ---
-        const appState = {
-            currentPage: 'dashboard',
-            isMobileMenuOpen: false,
-        };
-
-        // --- Main JavaScript (DOM Ready) ---
-        document.addEventListener('DOMContentLoaded', function() {
-            
-            const loginPage = document.getElementById('login-page');
-            const appLayout = document.getElementById('app-layout');
-            const mainContent = document.getElementById('main-content');
-            const allPages = document.querySelectorAll('.page-section');
-            const allNavLinks = document.querySelectorAll('.nav-link');
-            
-            const loginForm = document.getElementById('login-form');
-            const signupForm = document.getElementById('signup-form');
-            const loginStatus = document.getElementById('login-status');
-            
-            const chatMessages = document.getElementById('chat-messages');
-            const chatForm = document.getElementById('chat-form');
-            const chatInput = document.getElementById('chat-input');
-            
-            // --- Page Navigation Function ---
-            // Isko window object par attach karein taaki auth listener ise call kar sake
-            window.navigateTo = function(pageId) {
-                if (!pageId) return;
-                appState.currentPage = pageId;
-
-                // Page Animation
-                mainContent.style.opacity = '0';
-                
-                setTimeout(() => {
-                    allPages.forEach(page => page.classList.remove('active'));
-                    const targetPage = document.getElementById('page-' + pageId);
-                    if (targetPage) {
-                        targetPage.classList.add('active');
-                    } else {
-                        console.warn("Page not found:", pageId, "Loading dashboard.");
-                        document.getElementById('page-dashboard').classList.add('active'); // Fallback
-                    }
-                    
-                    allNavLinks.forEach(link => {
-                        link.classList.toggle('active', link.dataset.page === pageId);
-                    });
-                    
-                    window.scrollTo(0, 0);
-                    mainContent.style.opacity = '1';
-                    
-                    // Mobile menu band karein
-                    document.getElementById('sidebar').classList.add('-translate-x-full');
-                    appState.isMobileMenuOpen = false;
-
-                }, 200); // 200ms fade transition
-            }
-
-            // Sabhi nav links par click listener
-            allNavLinks.forEach(link => {
-                link.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const pageId = this.dataset.page;
-                    if (pageId) {
-                         if (pageId === 'sign-out') {
-                            if(auth) signOut(auth).catch(e => console.error("Sign out error", e));
-                        } else {
-                            window.navigateTo(pageId);
-                        }
-                    }
-                });
-            });
-
-            // --- REAL-TIME CHAT Functionality ---
-            async function initChat() {
-                if (!db) return;
-                
-                const collectionPath = `/artifacts/${appId}/public/data/chatMessages`;
-                const chatCollection = collection(db, collectionPath);
-                
-                // Naye messages ke liye query
-                // Note: orderBy('timestamp') hata diya gaya hai taaki 'index missing' error na aaye.
-                // Hum messages ko client-side par sort kar sakte hain ya (behtar) maan kar chalte hain ki onSnapshot order maintain karega.
-                const q = query(chatCollection, limit(100));
-
-                chatUnsubscribe = onSnapshot(q, (snapshot) => {
-                    chatMessages.innerHTML = ''; // Purane messages clear karein
-                    let messages = [];
-                    snapshot.forEach((doc) => messages.push(doc.data()));
-
-                    // Messages ko client-side par timestamp se sort karein
-                    messages.sort((a, b) => (a.timestamp ? a.timestamp.seconds : 0) - (b.timestamp ? b.timestamp.seconds : 0));
-                    
-                    messages.forEach((msg) => {
-                        const isMe = msg.email === currentUserEmail;
-                        const msgElement = document.createElement('div');
-                        msgElement.className = `mb-4 ${isMe ? 'text-right' : 'text-left'}`;
-                        msgElement.innerHTML = `
-                            <div class="inline-block p-3 rounded-lg ${isMe ? 'bg-primary text-white' : 'bg-card'}">
-                                <span class="block text-xs opacity-70 mb-1">${isMe ? 'You' : (msg.email ? msg.email.split('@')[0] : 'User')}</span>
-                                ${msg.text}
-                            </div>
-                        `;
-                        chatMessages.appendChild(msgElement);
-                    });
-                    chatMessages.scrollTop = chatMessages.scrollHeight; // Auto-scroll to bottom
-                });
-            }
-
-            // Chat form submit
-            chatForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const text = chatInput.value.trim();
-                if (text && db && currentUserEmail) {
-                    try {
-                        const collectionPath = `/artifacts/${appId}/public/data/chatMessages`;
-                        await addDoc(collection(db, collectionPath), {
-                            text: text,
-                            email: currentUserEmail,
-                            timestamp: serverTimestamp()
-                        });
-                        chatInput.value = ''; // Input clear karein
-                    } catch (error) {
-                        console.error("Error sending message: ", error);
-                    }
-                }
-            });
-
-
-            // --- UI Elements ---
-            
-            // Light/Dark Mode
-            const themeToggleBtn = document.getElementById('theme-toggle');
-            function updateThemeIcon(isDark) {
-                themeToggleBtn.innerHTML = isDark 
-                    ? `<ion-icon name="sunny-outline" class="text-2xl"></ion-icon>` 
-                    : `<ion-icon name="moon-outline" class="text-2xl"></ion-icon>`;
-            }
-            themeToggleBtn.addEventListener('click', () => {
-                document.documentElement.classList.toggle('dark');
-                updateThemeIcon(document.documentElement.classList.contains('dark'));
-            });
-            updateThemeIcon(document.documentElement.classList.contains('dark'));
-            
-            // Mobile Menu Toggle
-            document.getElementById('mobile-menu-btn').addEventListener('click', () => {
-                document.getElementById('sidebar').classList.toggle('-translate-x-full');
-            });
-
-            // Login/Sign up tabs
-            document.getElementById('login-tab').addEventListener('click', (e) => {
-                e.preventDefault();
-                loginForm.classList.remove('hidden');
-                signupForm.classList.add('hidden');
-                e.target.classList.add('border-primary', 'text-heading');
-                document.getElementById('signup-tab').classList.remove('border-primary', 'text-heading');
-            });
-            document.getElementById('signup-tab').addEventListener('click', (e) => {
-                e.preventDefault();
-                loginForm.classList.add('hidden');
-                signupForm.classList.remove('hidden');
-                e.target.classList.add('border-primary', 'text-heading');
-                document.getElementById('login-tab').classList.remove('border-primary', 'text-heading');
-            });
-            
-            
-            // --- FIX: AUTH LOGIC KO DOMContentLoaded KE ANDAR MOVED KIYA GAYA ---
-            
-            // --- Authentication Logic ---
-            if (auth) {
-                onAuthStateChanged(auth, (user) => {
-                    if (user && !user.isAnonymous) {
-                        // User Logged In Hai
-                        currentUserId = user.uid;
-                        currentUserEmail = user.email;
-                        
-                        document.getElementById('user-email-sidebar').textContent = currentUserEmail;
-                        appLayout.classList.remove('hidden');
-                        loginPage.classList.add('hidden');
-                        
-                        // Yahaan navigateTo call karein, ab yeh defined hai
-                        window.navigateTo(appState.currentPage); 
-                        initChat(); // Chat ko initialize karein
-                        
-                    } else {
-                        // User Logged Out Hai
-                        currentUserId = null;
-                        currentUserEmail = null;
-                        
-                        appLayout.classList.add('hidden');
-                        loginPage.classList.remove('hidden');
-                        
-                        // Chat listener ko band karein
-                        if (chatUnsubscribe) chatUnsubscribe();
-                    }
-                });
-                
-                // --- Auth Forms ---
-                loginForm.addEventListener('submit', (e) => {
-                    e.preventDefault();
-                    loginStatus.textContent = "Logging in...";
-                    signInWithEmailAndPassword(auth, loginForm.email.value, loginForm.password.value)
-                        .catch(error => loginStatus.textContent = error.message);
-                });
-
-                signupForm.addEventListener('submit', (e) => {
-                    e.preventDefault();
-                    loginStatus.textContent = "Creating account...";
-                    createUserWithEmailAndPassword(auth, signupForm.email.value, signupForm.password.value)
-                        .catch(error => loginStatus.textContent = error.message);
-                });
-                
-                // Firebase Sign In (Anonymous ya Token)
-                (async () => {
-                    if (!auth) return;
-                    try {
-                        if (initialAuthToken) {
-                            await signInWithCustomToken(auth, initialAuthToken);
-                        } else {
-                            await signInAnonymously(auth);
-                        }
-                        console.log("Firebase Auth token checked/signed in.");
-                    } catch (e) {
-                        console.error("Auth sign-in error:", e);
-                        if(loginStatus) loginStatus.textContent = "Authentication service error.";
-                    }
-                })();
-
-            } else {
-                // Firebase fail error
-                if(loginStatus) loginStatus.textContent = "Error: Could not connect to authentication service.";
-            }
-
-        });
-    </script>
-
-    <style>
-        :root {
-            --color-text-light: #4A5568;
-            --color-bg-light: #F7FAFC;
-            --color-card-light: #FFFFFF;
-            
-            --color-text-dark: #E2E8F0;
-            --color-bg-dark: #0F172A; /* Naya professional dark background */
-            --color-card-dark: #1E293B;
-            
-            --color-primary: #3B82F6;
-            --color-primary-hover: #2563EB;
-        }
-
-        /* --- Light Mode --- */
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--color-bg-light);
-            color: var(--color-text-light);
-            transition: background-color 0.3s ease, color 0.3s ease;
-        }
-        .bg-card { background-color: var(--color-card-light); }
-        .text-main { color: var(--color-text-light); }
-        .text-heading { color: #1A202C; }
-        .border-card { border-color: #E2E8F0; }
-        .bg-app { background-color: var(--color-bg-light); }
-        .sidebar-bg { background-color: rgba(255, 255, 255, 0.8); }
-
-        /* --- Dark Mode --- */
-        .dark body {
-            background-color: var(--color-bg-dark);
-            color: var(--color-text-dark);
-        }
-        .dark .bg-card { background-color: var(--color-card-dark); }
-        .dark .text-main { color: var(--color-text-dark); }
-        .dark .text-heading { color: #FFFFFF; }
-        .dark .border-card { border-color: #334155; }
-        .dark .bg-app { background-color: var(--color-bg-dark); }
-        .dark .sidebar-bg { 
-            background-color: rgba(30, 41, 59, 0.7); /* Glassmorphism Effect */
-            backdrop-filter: blur(10px);
-        }
-
-        /* --- Primary Color --- */
-        .text-primary { color: var(--color-primary); }
-        .bg-primary { background-color: var(--color-primary); }
-        .border-primary { border-color: var(--color-primary); }
-        .btn-primary {
-            background-color: var(--color-primary); color: #FFFFFF;
-            padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-weight: 600;
-            transition: background-color 0.3s ease;
-        }
-        .btn-primary:hover { background-color: var(--color-primary-hover); }
-
-        /* --- App Layout --- */
-        #app-layout {
-            display: grid;
-            grid-template-columns: 1fr; /* Mobile-first */
-        }
-        @media (min-width: 768px) {
-            #app-layout {
-                grid-template-columns: 280px 1fr; /* Sidebar + Content */
-            }
-        }
-        
-        #sidebar {
-            transition: transform 0.3s ease-out;
-        }
-        
-        /* --- Page Sections (CRITICAL FIX) --- */
-        .page-section {
-            display: none; /* Sabhi pages by default hide karein */
-            min-height: 100vh;
-        }
-        .page-section.active {
-            display: block; /* Sirf active page ko show karein */
-            animation: pageFadeIn 0.4s ease-out;
-        }
-        
-        #main-content {
-            transition: opacity 0.2s ease-out;
-        }
-        
-        @keyframes pageFadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Nav link active state */
-        .nav-link.active {
-            background-color: var(--color-primary);
-            color: #FFFFFF;
-            font-weight: 600;
-        }
-        
-        /* Form Inputs */
-        .form-input {
-            width: 100%; padding: 0.75rem 1rem; border-radius: 0.5rem;
-            transition: border-color 0.3s ease, box-shadow 0.3s ease;
-        }
-        .dark .form-input {
-             border: 1px solid #475569; background-color: #1E293B; color: #E2E8F0;
-        }
-        .light .form-input {
-            border: 1px solid #CBD5E1; background-color: #FFFFFF; color: #1A202C;
-        }
-        .form-input:focus {
-            outline: none; border-color: var(--color-primary);
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
-        }
-        
-        /* Chat Scrollbar */
-        #chat-messages {
-            -ms-overflow-style: none;  /* IE and Edge */
-            scrollbar-width: none;  /* Firefox */
-        }
-        #chat-messages::-webkit-scrollbar {
-            display: none; /* Chrome, Safari, Opera */
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>नीहा | Professional Dashboard</title>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.3/dist/tailwind.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+  <style>
+    body { transition: background 0.5s, color 0.5s; }
+    .scrollbar-hide::-webkit-scrollbar { display: none; }
+  </style>
 </head>
-<body class="min-h-screen">
+<body class="bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100">
 
-    <!-- ===== Page 1: Login / Sign Up ===== -->
-    <!-- Yeh by default visible hai -->
-    <div id="login-page" class="flex items-center justify-center min-h-screen bg-app p-4">
-        <div class="w-full max-w-md">
-            <h1 class="text-3xl font-bold text-center text-heading mb-4">
-                R.S Films <span class="text-primary">Group</span>
-            </h1>
-            <p class="text-center text-main mb-8">The All-in-One Creator Platform</p>
-            
-            <div class="bg-card p-8 rounded-xl border border-card shadow-lg">
-                <!-- Tabs -->
-                <div class="flex border-b border-card mb-6">
-                    <button id="login-tab" class="w-1/2 py-4 text-center font-semibold border-b-2 border-primary text-heading">Login</button>
-                    <button id="signup-tab" class="w-1/2 py-4 text-center font-semibold text-main">Sign Up</button>
-                </div>
-                
-                <!-- Login Form -->
-                <form id="login-form" class="space-y-6">
-                    <div>
-                        <label for="login-email" class="block text-sm font-medium text-main mb-2">Email</label>
-                        <input type="email" name="email" id="login-email" class="form-input" required>
-                    </div>
-                    <div>
-                        <label for="login-password" class="block text-sm font-medium text-main mb-2">Password</label>
-                        <input type="password" name="password" id="login-password" class="form-input" required>
-                    </div>
-                    <div><button type="submit" class="btn-primary w-full">Login</button></div>
-                </form>
-                
-                <!-- Sign Up Form -->
-                <form id="signup-form" class="space-y-6 hidden">
-                    <div>
-                        <label for="signup-email" class="block text-sm font-medium text-main mb-2">Email</label>
-                        <input type="email" name="email" id="signup-email" class="form-input" required>
-                    </div>
-                    <div>
-                        <label for="signup-password" class="block text-sm font-medium text-main mb-2">Password</label>
-                        <input type="password" name="password" id="signup-password" class="form-input" required>
-                    </div>
-                    <div><button type="submit" class="btn-primary w-full">Create Account</button></div>
-                </form>
-                
-                <p id="login-status" class="text-red-500 mt-4 text-center"></p>
-            </div>
-        </div>
-    </div>
-    
-    <!-- ===== Page 2: Main App Layout (Hidden by default) ===== -->
-    <!-- Yeh JS se visible hoga jab login ho jaayega -->
-    <div id="app-layout" class="hidden">
-    
-        <!-- Sidebar (Navigation) -->
-        <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 w-72 sidebar-bg border-r border-card flex-col flex p-6
-                            transform -translate-x-full md:translate-x-0 md:fixed">
-            <!-- Logo -->
-            <a href="#" class="nav-link text-2xl font-bold text-heading mb-10" data-page="dashboard">
-                R.S Films <span class="text-primary">Group</span>
-            </a>
-            
-            <!-- Navigation Links -->
-            <nav class="flex-grow space-y-2">
-                <a href="#" class="nav-link text-main flex items-center p-3 rounded-lg" data-page="dashboard">
-                    <ion-icon name="grid-outline" class="text-xl mr-3"></ion-icon> Dashboard
-                </a>
-                <a href="#" class="nav-link text-main flex items-center p-3 rounded-lg" data-page="pricing">
-                    <ion-icon name="pricetags-outline" class="text-xl mr-3"></ion-icon> Services & Pricing
-                </a>
-                <a href="#" class="nav-link text-main flex items-center p-3 rounded-lg" data-page="hire">
-                    <ion-icon name="person-add-outline" class="text-xl mr-3"></ion-icon> Hire a Professional
-                </a>
-                <a href="#" class="nav-link text-main flex items-center p-3 rounded-lg" data-page="store">
-                    <ion-icon name="storefront-outline" class="text-xl mr-3"></ion-icon> Digital Store
-                </a>
-                <a href="#" class="nav-link text-main flex items-center p-3 rounded-lg" data-page="portfolio">
-                    <ion-icon name="images-outline" class="text-xl mr-3"></ion-icon> Latest Work
-                </a>
-                <a href="#" class="nav-link text-main flex items-center p-3 rounded-lg" data-page="clients">
-                    <ion-icon name="people-outline" class="text-xl mr-3"></ion-icon> Humare Clients
-                </a>
-                <a href="#" class="nav-link text-main flex items-center p-3 rounded-lg" data-page="chat">
-                    <ion-icon name="chatbubbles-outline" class="text-xl mr-3"></ion-icon> Community Chat
-                </a>
-            </nav>
-            
-            <!-- User Profile (Bottom) -->
-            <div class="mt-auto">
-                <div class="border-t border-card pt-6">
-                    <p class="text-sm text-main" id="user-email-sidebar">Loading...</p>
-                    <a href="#" class="nav-link text-red-500 text-sm font-semibold" data-page="sign-out">
-                        Sign Out
-                    </a>
-                </div>
-            </div>
-        </aside>
-        
-        <!-- Main Content Area -->
-        <div class="md:ml-72 bg-app">
-            <!-- Top Header (Mobile Menu + Theme Toggle) -->
-            <header class="sticky top-0 z-40 bg-card bg-opacity-80 backdrop-blur-lg border-b border-card
-                           flex md:hidden items-center justify-between p-4">
-                <button id="mobile-menu-btn" class="text-main focus:outline-none">
-                    <ion-icon name="menu-outline" class="text-3xl"></ion-icon>
-                </button>
-                <h2 class="text-xl font-bold text-heading">R.S Films</h2>
-                <button id="theme-toggle" class="text-main">
-                    <!-- Icon JS se set hoga -->
-                </button>
-            </header>
-            
-            <!-- Page Content -->
-            <main id="main-content" class="p-6 md:p-12">
-            
-                <!-- ===== Dashboard Page ===== -->
-                <!-- FIX: 'active' class add kiya taaki yeh login ke baad default dikhe -->
-                <section id="page-dashboard" class="page-section active">
-                    <h1 class="text-4xl font-bold text-heading mb-8">Welcome to your Dashboard</h1>
-                    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <a href="#" data-page="hire" class="nav-link bg-card p-6 rounded-xl border border-card hover:border-primary transition-all">
-                            <ion-icon name="person-add-outline" class="text-4xl text-primary mb-3"></ion-icon>
-                            <h3 class="text-2xl font-semibold text-heading">Hire a Pro</h3>
-                            <p class="text-main">Video Editors, Designers, aur bhi bahut kuch.</p>
-                        </a>
-                        <a href="#" data-page="store" class="nav-link bg-card p-6 rounded-xl border border-card hover:border-primary transition-all">
-                            <ion-icon name="storefront-outline" class="text-4xl text-green-500 mb-3"></ion-icon>
-                            <h3 class="text-2xl font-semibold text-heading">Digital Store</h3>
-                            <p class="text-main">Poster PSDs, Video LUTs aur templates khareedein.</p>
-                        </a>
-                        <a href="#" data-page="pricing" class="nav-link bg-card p-6 rounded-xl border border-card hover:border-primary transition-all">
-                            <ion-icon name="pricetags-outline" class="text-4xl text-yellow-500 mb-3"></ion-icon>
-                            <h3 class="text-2xl font-semibold text-heading">Humare Plans</h3>
-                            <p class="text-main">Channel management ke liye humare plans dekhein.</p>
-                        </a>
-                    </div>
-                </section>
-                
-                <!-- ===== Pricing Page ===== -->
-                <section id="page-pricing" class="page-section">
-                    <h1 class="text-4xl font-bold text-heading text-center mb-16">Services & Pricing Plans</h1>
-                    <div class="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-                        <!-- Plan 1 -->
-                        <div class="bg-card p-8 rounded-xl border border-card flex flex-col">
-                            <h3 class="text-2xl font-semibold text-heading mb-4">Silver Plan</h3>
-                            <p class="text-4xl font-bold text-heading mb-6">$99 <span class="text-lg font-normal text-main">/month</span></p>
-                            <ul class="space-y-3 text-main mb-8 flex-grow">
-                                <li><ion-icon name="checkmark-outline" class="text-green-500"></ion-icon> 2 Video Editing</li>
-                                <li><ion-icon name="checkmark-outline" class="text-green-500"></ion-icon> 5 Graphic Posters</li>
-                                <li><ion-icon name="checkmark-outline" class="text-green-500"></ion-icon> Basic SEO</li>
-                            </ul>
-                            <button class="btn-primary w-full">Choose Plan</button>
-                        </div>
-                        <!-- Plan 2 (Featured) -->
-                        <div class="bg-card p-8 rounded-xl border-2 border-primary flex flex-col shadow-2xl shadow-primary/20">
-                            <h3 class="text-2xl font-semibold text-primary mb-4">Gold Plan (Popular)</h3>
-                            <p class="text-4xl font-bold text-heading mb-6">$299 <span class="text-lg font-normal text-main">/month</span></p>
-                            <ul class="space-y-3 text-main mb-8 flex-grow">
-                                <li><ion-icon name="checkmark-outline" class="text-green-500"></ion-icon> 8 Video Editing</li>
-                                <li><ion-icon name="checkmark-outline" class="text-green-500"></ion-icon> 15 Graphic Posters</li>
-                                <li><ion-icon name="checkmark-outline" class="text-green-500"></ion-icon> Full Channel SEO</li>
-                                <li><ion-icon name="checkmark-outline" class="text-green-500"></ion-icon> YouTube Management</li>
-                            </ul>
-                            <button class="btn-primary w-full">Choose Plan</button>
-                        </div>
-                        <!-- Plan 3 -->
-                        <div class="bg-card p-8 rounded-xl border border-card flex flex-col">
-                            <h3 class="text-2xl font-semibold text-heading mb-4">Platinum Plan</h3>
-                            <p class="text-4xl font-bold text-heading mb-6">$599 <span class="text-lg font-normal text-main">/month</span></p>
-                            <ul class="space-y-3 text-main mb-8 flex-grow">
-                                <li><ion-icon name="checkmark-outline" class="text-green-500"></ion-icon> 20 Video Editing</li>
-                                <li><ion-icon name="checkmark-outline" class="text-green-500"></ion-icon> Unlimited Posters</li>
-                                <li><ion-icon name="checkmark-outline" class="text-green-500"></ion-icon> Full Channel Management</li>
-                                <li><ion-icon name="checkmark-outline" class="text-green-500"></ion-icon> Video Shooting (1/month)</li>
-                            </ul>
-                            <button class="btn-primary w-full">Choose Plan</button>
-                        </div>
-                    </div>
-                </section>
-                
-                <!-- ===== Hire a Pro Page ===== -->
-                <section id="page-hire" class="page-section">
-                    <h1 class="text-4xl font-bold text-heading mb-16">Hire a Professional</h1>
-                    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <!-- Profile Card 1 -->
-                        <div class="bg-card p-6 rounded-xl border border-card text-center">
-                            <img src="https://placehold.co/100x100/3B82F6/FFFFFF?text=Editor" alt="Editor" class="w-24 h-24 rounded-full mx-auto mb-4">
-                            <h3 class="text-2xl font-semibold text-heading">Rohan Sharma</h3>
-                            <p class="text-primary font-medium mb-2">Pro Video Editor</p>
-                            <p class="text-main mb-4">5+ saal ka experience music videos aur vlogs mein.</p>
-                            <button class="btn-primary w-full">Hire Me</button>
-                        </div>
-                        <!-- Profile Card 2 -->
-                        <div class="bg-card p-6 rounded-xl border border-card text-center">
-                            <img src="https://placehold.co/100x100/10B981/FFFFFF?text=Designer" alt="Designer" class="w-24 h-24 rounded-full mx-auto mb-4">
-                            <h3 class="text-2xl font-semibold text-heading">Priya Singh</h3>
-                            <p class="text-green-500 font-medium mb-2">Graphic Designer</p>
-                            <p class="text-main mb-4">Aapke gaano ke liye attractive posters aur thumbnails.</p>
-                            <button class="btn-primary w-full">Hire Me</button>
-                        </div>
-                        <!-- Profile Card 3 -->
-                        <div class="bg-card p-6 rounded-xl border border-card text-center">
-                            <img src="https://placehold.co/100x100/EF4444/FFFFFF?text=Manager" alt="Manager" class="w-24 h-24 rounded-full mx-auto mb-4">
-                            <h3 class="text-2xl font-semibold text-heading">Vikram Kumar</h3>
-                            <p class="text-red-500 font-medium mb-2">Channel Manager</p>
-                            <p class="text-main mb-4">Aapke YouTube channel ki growth aur management.</p>
-                            <button class="btn-primary w-full">Hire Me</button>
-                        </div>
-                    </div>
-                </section>
-                
-                <!-- ===== Digital Store Page ===== -->
-                <section id="page-store" class="page-section">
-                    <h1 class="text-4xl font-bold text-heading mb-16">Digital Asset Store</h1>
-                    <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        <!-- Product 1 -->
-                        <div class="bg-card rounded-xl border border-card overflow-hidden">
-                            <img src="https://placehold.co/600x400/3B82F6/FFFFFF?text=Music+Poster+PSD" alt="PSD" class="w-full h-48 object-cover">
-                            <div class="p-4">
-                                <h3 class="text-xl font-semibold text-heading mb-2">Music Poster PSD Vol. 1</h3>
-                                <p class="text-2xl font-bold text-primary mb-4">$10</p>
-                                <button class="btn-primary w-full">Buy Now</button>
-                            </div>
-                        </div>
-                        <!-- Product 2 -->
-                        <div class="bg-card rounded-xl border border-card overflow-hidden">
-                            <img src="https://placehold.co/600x400/F59E0B/FFFFFF?text=Cinematic+LUTs" alt="LUTs" class="w-full h-48 object-cover">
-                            <div class="p-4">
-                                <h3 class="text-xl font-semibold text-heading mb-2">Cinematic LUT Pack</h3>
-                                <p class="text-2xl font-bold text-primary mb-4">$25</p>
-                                <button class="btn-primary w-full">Buy Now</button>
-                            </div>
-                        </div>
-                        <!-- Product 3 -->
-                        <div class="bg-card rounded-xl border border-card overflow-hidden">
-                            <img src="https://placehold.co/600x400/10B981/FFFFFF?text=Vlog+Templates" alt="Templates" class="w-full h-48 object-cover">
-                            <div class="p-4">
-                                <h3 class="text-xl font-semibold text-heading mb-2">Vlog Editing Templates</h3>
-                                <p class="text-2xl font-bold text-primary mb-4">$15</p>
-                                <button class="btn-primary w-full">Buy Now</button>
-                            </div>
-                        </div>
-                        <!-- Product 4 -->
-                        <div class="bg-card rounded-xl border border-card overflow-hidden">
-                            <img src="https://placehold.co/600x400/EF4444/FFFFFF?text=Thumbnails" alt="Thumbnails" class="w-full h-48 object-cover">
-                            <div class="p-4">
-                                <h3 class="text-xl font-semibold text-heading mb-2">YouTube Thumbnail Pack</h3>
-                                <p class="text-2xl font-bold text-primary mb-4">$5</p>
-                                <button class="btn-primary w-full">Buy Now</button>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-                
-                <!-- ===== Latest Work Page ===== -->
-                <section id="page-portfolio" class="page-section">
-                    <h1 class="text-4xl font-bold text-heading mb-16">Humara Latest Work</h1>
-                    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <img src="https://placehold.co/600x400/8B5CF6/FFFFFF?text=Music+Video" alt="Work 1" class="rounded-lg shadow-lg">
-                        <img src="https://placehold.co/600x400/EC4899/FFFFFF?text=Poster+Design" alt="Work 2" class="rounded-lg shadow-lg">
-                        <img src="https://placehold.co/600x400/F59E0B/FFFFFF?text=Channel+Art" alt="Work 3" class="rounded-lg shadow-lg">
-                        <img src="https://placehold.co/600x400/10B981/FFFFFF?text=Short+Film" alt="Work 4" class="rounded-lg shadow-lg">
-                        <img src="https://placehold.co/600x400/3B82F6/FFFFFF?text=Vlog+Edit" alt="Work 5" class="rounded-lg shadow-lg">
-                    </div>
-                </section>
-                
-                <!-- ===== Clients Page ===== -->
-                <section id="page-clients" class="page-section">
-                    <h1 class="text-4xl font-bold text-heading text-center mb-16">Humare Saath Jude Clients</h1>
-                    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8">
-                        <div class="bg-card p-6 rounded-xl border border-card flex flex-col items-center justify-center aspect-square">
-                            <img src="https://placehold.co/100x100/3B82F6/FFFFFF?text=Client+1" alt="Client Logo 1" class="w-24 h-24 rounded-full mb-4 object-cover">
-                            <h3 class="text-xl font-semibold text-heading text-center">Client Ka Naam</h3>
-                        </div>
-                        <div class="bg-card p-6 rounded-xl border border-card flex flex-col items-center justify-center aspect-square">
-                            <img src="https://placehold.co/100x100/10B981/FFFFFF?text=Client+2" alt="Client Logo 2" class="w-24 h-24 rounded-full mb-4 object-cover">
-                            <h3 class="text-xl font-semibold text-heading text-center">Channel Name</h3>
-                        </div>
-                    </div>
-                </section>
-                
-                <!-- ===== Community Chat Page ===== -->
-                <section id="page-chat" class="page-section">
-                    <h1 class="text-4xl font-bold text-heading mb-8">Community Chat</h1>
-                    <div class="bg-card border border-card rounded-lg flex flex-col h-[70vh]">
-                        <!-- Chat Messages Area -->
-                        <div id="chat-messages" class="flex-grow p-6 overflow-y-auto">
-                            <!-- Messages JS se load honge -->
-                            <p class="text-main text-center">Loading chat...</p>
-                        </div>
-                        <!-- Chat Input Form -->
-                        <form id="chat-form" class="p-4 border-t border-card flex">
-                            <input type="text" id="chat-input" class="form-input flex-grow" placeholder="Type a message..." required>
-                            <button type="submit" class="btn-primary ml-4">
-                                <ion-icon name="send-outline" class="text-xl"></ion-icon>
-                            </button>
-                        </form>
-                    </div>
-                </section>
-                
-            </main>
-        </div>
-        
-    </div>
+<!-- Sidebar -->
+<div class="fixed inset-y-0 left-0 w-64 bg-white dark:bg-gray-800 shadow-lg transform -translate-x-full md:translate-x-0 transition-transform duration-300 z-50" id="sidebar">
+  <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+    <h1 class="font-bold text-xl">नीहा</h1>
+    <button id="closeSidebar" class="md:hidden text-gray-800 dark:text-gray-100">
+      <i data-feather="x"></i>
+    </button>
+  </div>
+  <nav class="mt-6">
+    <a href="#dashboard" class="flex items-center px-4 py-2 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors duration-300 active">Dashboard</a>
+    <a href="#portfolio" class="flex items-center px-4 py-2 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors duration-300">Portfolio</a>
+    <a href="#services" class="flex items-center px-4 py-2 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors duration-300">Services</a>
+    <a href="#contact" class="flex items-center px-4 py-2 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors duration-300">Contact</a>
+  </nav>
+  <div class="absolute bottom-4 w-full px-4">
+    <button id="themeToggle" class="w-full flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded shadow hover:bg-blue-700 transition-colors duration-300">
+      <i data-feather="sun" class="mr-2"></i>Toggle Theme
+    </button>
+  </div>
+</div>
 
+<!-- Mobile Sidebar Overlay -->
+<div class="fixed inset-0 bg-black bg-opacity-50 hidden z-40" id="sidebarOverlay"></div>
+
+<!-- Top Navbar -->
+<div class="flex justify-between items-center p-4 bg-white dark:bg-gray-800 shadow-md md:ml-64">
+  <button id="openSidebar" class="md:hidden text-gray-800 dark:text-gray-100">
+    <i data-feather="menu"></i>
+  </button>
+  <h2 class="text-xl font-semibold">Dashboard</h2>
+</div>
+
+<!-- Main Content -->
+<main class="md:ml-64 p-6 space-y-6">
+
+  <!-- Dashboard Cards -->
+  <section id="dashboard" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 hover:shadow-xl transition-shadow duration-300">
+      <h3 class="font-bold text-lg">Total Clients</h3>
+      <p class="text-3xl mt-2">45</p>
+    </div>
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 hover:shadow-xl transition-shadow duration-300">
+      <h3 class="font-bold text-lg">Active Projects</h3>
+      <p class="text-3xl mt-2">12</p>
+    </div>
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 hover:shadow-xl transition-shadow duration-300">
+      <h3 class="font-bold text-lg">Revenue</h3>
+      <p class="text-3xl mt-2">$23,400</p>
+    </div>
+  </section>
+
+  <!-- Portfolio Section -->
+  <section id="portfolio" class="space-y-4">
+    <h2 class="text-2xl font-bold">Portfolio</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden hover:scale-105 transform transition duration-300">
+        <img src="https://via.placeholder.com/400x250" alt="Project" class="w-full h-48 object-cover">
+        <div class="p-4">
+          <h3 class="font-bold text-lg">Poster Design</h3>
+          <p class="text-gray-600 dark:text-gray-300 mt-2">Creative and unique poster design for clients.</p>
+        </div>
+      </div>
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden hover:scale-105 transform transition duration-300">
+        <img src="https://via.placeholder.com/400x250" alt="Project" class="w-full h-48 object-cover">
+        <div class="p-4">
+          <h3 class="font-bold text-lg">Video Editing</h3>
+          <p class="text-gray-600 dark:text-gray-300 mt-2">Professional editing for music videos and films.</p>
+        </div>
+      </div>
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden hover:scale-105 transform transition duration-300">
+        <img src="https://via.placeholder.com/400x250" alt="Project" class="w-full h-48 object-cover">
+        <div class="p-4">
+          <h3 class="font-bold text-lg">YouTube Management</h3>
+          <p class="text-gray-600 dark:text-gray-300 mt-2">Growing and managing multiple YouTube channels.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Services Section -->
+  <section id="services" class="space-y-4">
+    <h2 class="text-2xl font-bold">Services</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 hover:shadow-xl transition-shadow duration-300">
+        <h3 class="font-bold text-lg">Video Shooting & Editing</h3>
+        <p class="text-gray-600 dark:text-gray-300 mt-2">High-quality shooting and editing for music and films.</p>
+      </div>
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 hover:shadow-xl transition-shadow duration-300">
+        <h3 class="font-bold text-lg">Poster & Graphic Design</h3>
+        <p class="text-gray-600 dark:text-gray-300 mt-2">Creative posters, thumbnails, and social media graphics.</p>
+      </div>
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 hover:shadow-xl transition-shadow duration-300">
+        <h3 class="font-bold text-lg">Digital Management</h3>
+        <p class="text-gray-600 dark:text-gray-300 mt-2">Managing YouTube, Instagram & Facebook professionally.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Contact Section -->
+  <section id="contact" class="space-y-4">
+    <h2 class="text-2xl font-bold">Contact</h2>
+    <form class="grid grid-cols-1 sm:grid-cols-2 gap-6 bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+      <input type="text" placeholder="Your Name" class="p-3 rounded border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+      <input type="email" placeholder="Email" class="p-3 rounded border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+      <input type="text" placeholder="Subject" class="p-3 rounded border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 sm:col-span-2">
+      <textarea placeholder="Message" class="p-3 rounded border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 sm:col-span-2"></textarea>
+      <button type="submit" class="sm:col-span-2 bg-blue-600 text-white p-3 rounded shadow hover:bg-blue-700 transition-colors duration-300">Send Message</button>
+    </form>
+  </section>
+
+</main>
+
+<script>
+  feather.replace();
+
+  // Sidebar toggle
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+  const openBtn = document.getElementById('openSidebar');
+  const closeBtn = document.getElementById('closeSidebar');
+
+  openBtn.addEventListener('click', () => {
+    sidebar.classList.remove('-translate-x-full');
+    overlay.classList.remove('hidden');
+  });
+
+  closeBtn.addEventListener('click', () => {
+    sidebar.classList.add('-translate-x-full');
+    overlay.classList.add('hidden');
+  });
+
+  overlay.addEventListener('click', () => {
+    sidebar.classList.add('-translate-x-full');
+    overlay.classList.add('hidden');
+  });
+
+  // Theme toggle
+  const themeBtn = document.getElementById('themeToggle');
+  const root = document.documentElement;
+  let dark = false;
+
+  themeBtn.addEventListener('click', () => {
+    dark = !dark;
+    if(dark) {
+      root.classList.add('dark');
+      themeBtn.innerHTML = '<i data-feather="moon" class="mr-2"></i>Light Mode';
+    } else {
+      root.classList.remove('dark');
+      themeBtn.innerHTML = '<i data-feather="sun" class="mr-2"></i>Dark Mode';
+    }
+    feather.replace();
+  });
+
+</script>
 </body>
 </html>
-
