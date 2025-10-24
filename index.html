@@ -1,31 +1,34 @@
 <!DOCTYPE html>
-<html lang="hi" class="dark">
+<!-- 
+  NAYA FIX: Default Light Mode. Dark class hata diya gaya hai.
+-->
+<html lang="hi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>R.S Films Group | The Ultimate Creator Platform</title>
-    <!-- Tailwind CSS CDN -->
+    <title>R.S Films Group | All-in-One Platform</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Font: Inter (Professional Font) -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- Google Font: Inter (Small & Professional) -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Ionicons CDN -->
-    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+    <!-- Ionicons -->
+    <script type"module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
     <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
-    
-    <!-- 
-      ===== NAYA CSS NAVIGATION (100% RELIABLE) =====
-    -->
+    <!-- Chart.js (Dashboard charts ke liye) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <style>
         :root {
             --color-text-light: #334155;
-            --color-bg-light: #F8FAFC;
+            --color-bg-light: #F1F5F9;
             --color-card-light: #FFFFFF;
+            --color-sidebar-light: #FFFFFF;
+            --color-border-light: #E2E8F0;
             
             --color-text-dark: #CBD5E1;
-            --color-bg-dark: #0F172A;
+            --color-bg-dark: #0B1120;
             --color-card-dark: #1E293B;
+            --color-sidebar-dark: #131B2E;
             --color-border-dark: #334155;
             
             --color-primary: #3B82F6;
@@ -33,23 +36,45 @@
             --color-primary-light: rgba(59, 130, 246, 0.1);
         }
 
-        /* --- Global Styles (Small Font) --- */
+        /* --- Global Styles --- */
         body {
             font-family: 'Inter', sans-serif;
-            font-size: 14px; /* Chhota base font */
+            font-size: 14px; /* Professional small font */
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
         }
-        
-        /* --- Light Mode --- */
+
+        /* --- NAYA: Animated Gradient Background (Video ka Solution) --- */
+        #full-page-animated-bg {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            width: 100vw; height: 100vh;
+            background: linear-gradient(-45deg, #F1F5F9, #E0E7FF, #BFDBFE, #E0E7FF);
+            background-size: 400% 400%;
+            animation: gradientBG 20s ease infinite;
+            z-index: -10;
+            opacity: 1;
+        }
+        .dark #full-page-animated-bg {
+            background: linear-gradient(-45deg, #0B1120, #131B2E, #1E293B, #131B2E);
+            animation: gradientBG 20s ease infinite;
+        }
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* --- Light Mode (Default) --- */
         body {
             background-color: var(--color-bg-light);
             color: var(--color-text-light);
         }
         .bg-card { background-color: var(--color-card-light); }
+        .bg-sidebar { background-color: var(--color-sidebar-light); }
         .text-main { color: var(--color-text-light); }
         .text-heading { color: #0F172A; }
-        .border-card { border-color: #E2E8F0; }
+        .border-main { border-color: var(--color-border-light); }
         .bg-app { background-color: var(--color-bg-light); }
 
         /* --- Dark Mode --- */
@@ -58,66 +83,52 @@
             color: var(--color-text-dark);
         }
         .dark .bg-card { background-color: var(--color-card-dark); }
+        .dark .bg-sidebar { background-color: var(--color-sidebar-dark); }
         .dark .text-main { color: var(--color-text-dark); }
         .dark .text-heading { color: #F1F5F9; }
-        .dark .border-card { border-color: var(--color-border-dark); }
+        .dark .border-main { border-color: var(--color-border-dark); }
         .dark .bg-app { background-color: var(--color-bg-dark); }
 
         .text-primary { color: var(--color-primary); }
         .bg-primary { background-color: var(--color-primary); }
         .border-primary { border-color: var(--color-primary); }
 
-        /* --- Button Styles (Small) --- */
-        .btn {
-            padding: 0.6rem 1.2rem; border-radius: 0.375rem;
-            font-weight: 600; font-size: 13px;
-            transition: all 0.2s ease; display: inline-flex;
-            align-items: center; justify-content: center;
-            border: 1px solid transparent; cursor: pointer;
-        }
-        .btn-primary {
-            background-color: var(--color-primary); color: #FFFFFF;
-            border-color: var(--color-primary);
-        }
-        .btn-primary:hover { background-color: var(--color-primary-hover); }
-        .btn-secondary {
-            border-color: #CBD5E1; color: var(--color-text-light);
-            background-color: var(--color-card-light);
-        }
-        .dark .btn-secondary {
-            border-color: var(--color-border-dark); color: var(--color-text-dark);
-            background-color: var(--color-card-dark);
-        }
-        .btn-secondary:hover {
-            border-color: var(--color-primary); color: var(--color-primary);
-        }
-
-        /* ===== NAYA CSS NAVIGATION LOGIC ===== */
+        /* --- Page Navigation FIX --- */
         .page-section {
-            display: none; /* Sabhi pages by default hide karein */
+            display: none; /* Sabhi pages by default hide */
             animation: pageFadeIn 0.4s ease-out;
-            min-height: 80vh;
         }
-        .page-section:target {
-            display: block;
-        }
-        main:not(:has(:target)) #page-home {
-            display: block;
+        .page-active {
+            display: block; /* Sirf active page dikhega */
         }
         @keyframes pageFadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* --- Top Navigation --- */
+        /* --- Sidebar Navigation --- */
         .nav-link {
-            transition: all 0.2s ease; font-size: 14px;
-            font-weight: 500; border-bottom: 2px solid transparent;
+            display: flex; align-items: center;
+            padding: 0.6rem 0.75rem;
+            border-radius: 0.375rem;
+            font-weight: 500;
+            font-size: 14px;
+            color: var(--color-text-light);
+            transition: all 0.2s ease;
         }
-        .nav-link:hover { color: var(--color-primary); }
+        .dark .nav-link { color: var(--color-text-dark); }
+        .nav-link:hover {
+            background-color: var(--color-primary-light);
+            color: var(--color-primary);
+        }
         .nav-link.active {
-            color: var(--color-primary); font-weight: 600;
-            border-bottom-color: var(--color-primary);
+            background-color: var(--color-primary);
+            color: #FFFFFF;
+            font-weight: 600;
+        }
+        .nav-link ion-icon {
+            font-size: 1.1rem;
+            margin-right: 0.75rem;
         }
         
         /* Form Inputs */
@@ -142,1020 +153,760 @@
             color: var(--text-main); margin-bottom: 4px;
         }
         
-        /* Page Headers */
-        .page-header {
-            font-size: 2.5rem; /* 40px */
-            font-weight: 700; color: var(--text-heading);
-            margin-bottom: 1.5rem; padding-bottom: 1rem;
-            border-bottom: 1px solid;
+        /* Buttons */
+        .btn {
+            padding: 0.5rem 1rem; border-radius: 0.375rem;
+            font-weight: 600; font-size: 13px;
+            transition: all 0.2s ease; display: inline-flex;
+            align-items: center; justify-content: center;
+            border: 1px solid transparent; cursor: pointer;
         }
-        .dark .page-header { border-color: var(--color-border-dark); }
-        .light .page-header { border-color: #E2E8F0; }
-
-        /* Blog Post Styling (Massive Content) */
-        .blog-content h2 {
-            font-size: 1.5rem; font-weight: 600;
-            color: var(--text-heading); margin-top: 2rem; margin-bottom: 1rem;
+        .btn-primary {
+            background-color: var(--color-primary); color: #FFFFFF;
+            border-color: var(--color-primary);
         }
-        .blog-content h3 {
-            font-size: 1.25rem; font-weight: 600;
-            color: var(--text-heading); margin-top: 1.5rem; margin-bottom: 0.75rem;
+        .btn-primary:hover { background-color: var(--color-primary-hover); }
+        .btn-secondary {
+            border-color: #CBD5E1; color: var(--color-text-light);
+            background-color: var(--color-card-light);
         }
-        .blog-content p {
-            font-size: 1rem; line-height: 1.7;
-            color: var(--text-main); margin-bottom: 1.5rem;
-        }
-        .blog-content ul {
-            list-style-type: disc; margin-left: 1.5rem;
-            margin-bottom: 1.5rem;
-        }
-        .blog-content li {
-            margin-bottom: 0.5rem; line-height: 1.7;
+        .dark .btn-secondary {
+            border-color: var(--color-border-dark); color: var(--color-text-dark);
+            background-color: var(--color-card-dark);
         }
 
-        /* ===== NAYA ANIMATED GRADIENT BACKGROUND (VIDEO KI JAGAH) ===== */
-        .animated-hero-bg {
-            background: linear-gradient(-45deg, #0F172A, #1E293B, #3B82F6, #1E293B);
-            background-size: 400% 400%;
-            animation: gradientBG 15s ease infinite;
-            position: relative; /* Hero content ko upar rakhne ke liye */
+        /* Login Page (Full Screen) */
+        #login-page {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
         }
-
-        /* Light mode mein alag gradient */
-        .light .animated-hero-bg {
-            background: linear-gradient(-45deg, #F8FAFC, #E0E7FF, #93C5FD, #E0E7FF);
-            background-size: 400% 400%;
-            animation: gradientBG 15s ease infinite;
-        }
-
-
-        @keyframes gradientBG {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
+        
+        /* Chat Styling */
+        #chat-messages {
+             height: calc(100vh - 250px);
         }
     </style>
-    
-    <!-- Sirf Theme/Mobile Menu ke liye JS -->
-    <script type="module">
-        document.addEventListener('DOMContentLoaded', function() {
-            const mobileMenuBtn = document.getElementById('mobile-menu-btn');
-            const mobileMenu = document.getElementById('mobile-menu');
-            const themeToggleBtn = document.getElementById('theme-toggle');
-            const themeToggleBtnMobile = document.getElementById('theme-toggle-mobile');
-            const allNavLinks = document.querySelectorAll('.nav-link');
-
-            // Mobile menu toggle
-            if (mobileMenuBtn) {
-                mobileMenuBtn.addEventListener('click', () => {
-                    if (mobileMenu) mobileMenu.classList.toggle('hidden');
-                });
-            }
-            
-            // Theme Toggle
-            function updateTheme(isDark) {
-                const icon = isDark ? `<ion-icon name="sunny-outline" class="text-xl"></ion-icon>` : `<ion-icon name="moon-outline" class="text-xl"></ion-icon>`;
-                if (themeToggleBtn) themeToggleBtn.innerHTML = icon;
-                if (themeToggleBtnMobile) themeToggleBtnMobile.innerHTML = icon;
-            }
-            function toggleTheme() {
-                document.documentElement.classList.toggle('dark');
-                updateTheme(document.documentElement.classList.contains('dark'));
-            }
-            if (themeToggleBtn) themeToggleBtn.addEventListener('click', toggleTheme);
-            if (themeToggleBtnMobile) themeToggleBtnMobile.addEventListener('click', toggleTheme);
-            updateTheme(document.documentElement.classList.contains('dark'));
-            
-            // Active Link Management
-            function updateActiveLink() {
-                let currentPageId = window.location.hash.substring(1); // e.g., "#page-home" -> "page-home"
-                if (!currentPageId) {
-                    currentPageId = 'page-home'; // Default
-                }
-                
-                allNavLinks.forEach(link => {
-                    link.classList.toggle('active', link.dataset.page === currentPageId);
-                });
-                
-                // Mobile menu band karein
-                if (mobileMenu) mobileMenu.classList.add('hidden');
-            }
-            
-            window.addEventListener('hashchange', updateActiveLink);
-            updateActiveLink();
-            
-            if (!window.location.hash) {
-                window.location.hash = '#page-home';
-            }
-        });
-    </script>
 </head>
-<body class="min-h-screen bg-app">
+<body class="bg-app">
 
-    <!-- ===== Top Navigation ===== -->
-    <header class="sticky top-0 z-50 bg-card/80 backdrop-blur-lg border-b border-card shadow-sm">
-        <div class="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-16">
+    <!-- NAYA: Animated Gradient Background -->
+    <div id="full-page-animated-bg"></div>
+
+    <!-- ===== Platform Layout (Sidebar + Content) ===== -->
+    <!-- Yeh by default hidden rahega, login ke baad dikhega -->
+    <div id="platform-layout" class="hidden">
+        <!-- Sidebar -->
+        <aside class="fixed top-0 left-0 z-40 w-64 h-screen transition-transform -translate-x-full md:translate-x-0 bg-sidebar border-r border-main" id="sidebar-menu">
+            <div class="h-full px-3 py-4 overflow-y-auto">
                 <!-- Logo -->
-                <a href="#page-home" class="nav-link text-xl font-bold text-heading p-0 border-b-0" data-page="page-home">
-                    R.S Films <span class="text-primary">Group</span>
+                <a href="#" class="flex items-center ps-2.5 mb-5" onclick="showPage('page-dashboard')">
+                    <span class="self-center text-xl font-bold whitespace-nowrap text-heading">R.S Films <span class="text-primary">Group</span></span>
                 </a>
                 
-                <!-- Desktop Nav -->
-                <nav class="hidden md:flex md:items-center md:space-x-6">
-                    <a href="#page-home" class="nav-link text-main" data-page="page-home">Home</a>
-                    <a href="#page-services" class="nav-link text-main" data-page="page-services">Services & Pricing</a>
-                    <a href="#page-music" class="nav-link text-main" data-page="page-music">Music Distribution</a>
-                    <a href="#page-mcn" class="nav-link text-main" data-page="page-mcn">MCN Application</a>
-                    <a href="#page-bazaar" class="nav-link text-main" data-page="page-bazaar">Bazaar (Store)</a>
-                    <a href="#page-blog" class="nav-link text-main" data-page="page-blog">Blog / Gyaan</a>
-                    <a href="#page-community" class="nav-link text-main" data-page="page-community">Community</a>
-                    <a href="#page-faq" class="nav-link text-main" data-page="page-faq">FAQ</a>
-                    <a href="#page-contact" class="nav-link text-main" data-page="page-contact">Contact Us</a>
-                </nav>
+                <!-- Navigation Links -->
+                <ul class="space-y-2 font-medium">
+                    <li><span class="px-3 text-xs font-semibold uppercase text-main">Menu</span></li>
+                    <li>
+                        <a href="#" class="nav-link active" data-page="page-dashboard">
+                            <ion-icon name="grid-outline"></ion-icon>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="nav-link" data-page="page-chat">
+                            <ion-icon name="chatbubbles-outline"></ion-icon>
+                            <span>Community Chat</span>
+                        </a>
+                    </li>
+                    
+                    <li><span class="px-3 pt-3 text-xs font-semibold uppercase text-main">Services</span></li>
+                    <li>
+                        <a href="#" class="nav-link" data-page="page-services">
+                            <ion-icon name="briefcase-outline"></ion-icon>
+                            <span>Services & Pricing</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="nav-link" data-page="page-music">
+                            <ion-icon name="musical-notes-outline"></ion-icon>
+                            <span>Music Distribution</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="nav-link" data-page="page-mcn">
+                            <ion-icon name="tv-outline"></ion-icon>
+                            <span>MCN Application</span>
+                        </a>
+                    </li>
+
+                    <li><span class="px-3 pt-3 text-xs font-semibold uppercase text-main">Bazaar</span></li>
+                    <li>
+                        <a href="#" class="nav-link" data-page="page-hire">
+                            <ion-icon name="person-add-outline"></ion-icon>
+                            <span>Hire a Professional</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="nav-link" data-page="page-store">
+                            <ion-icon name="storefront-outline"></ion-icon>
+                            <span>Digital Store (PSDs)</span>
+                        </a>
+                    </li>
+                    
+                    <li><span class="px-3 pt-3 text-xs font-semibold uppercase text-main">Company</span></li>
+                    <li>
+                        <a href="#" class="nav-link" data-page="page-work">
+                            <ion-icon name="images-outline"></ion-icon>
+                            <span>Latest Work</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="nav-link" data-page="page-clients">
+                            <ion-icon name="people-outline"></ion-icon>
+                            <span>Humare Clients</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="nav-link" data-page="page-data">
+                            <ion-icon name="stats-chart-outline"></ion-icon>
+                            <span>Client Data</span>
+                        </a>
+                    </li>
+                </ul>
                 
-                <!-- Theme Toggle & Mobile Button -->
-                <div class="flex items-center">
-                    <button id="theme-toggle" class="text-main p-2 rounded-full hidden md:block">
-                        <!-- Icon JS se set hoga -->
+                <!-- Footer (User/Logout) -->
+                <div class="absolute bottom-0 left-0 w-full p-4 space-y-2 border-t border-main bg-sidebar">
+                    <button id="theme-toggle" class="w-full btn btn-secondary">
+                        <ion-icon name="moon-outline" class="mr-2 text-lg"></ion-icon>
+                        <span>Toggle Theme</span>
                     </button>
-                    <button id="mobile-menu-btn" class="text-main p-2 rounded-md md:hidden">
+                    <button id="auth-logout-sidebar" class="w-full btn btn-secondary">
+                        <ion-icon name="log-out-outline" class="mr-2 text-lg"></ion-icon>
+                        <span>Sign Out</span>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="p-4 md:ml-64 relative min-h-screen">
+            <!-- Header Bar (Mobile) -->
+             <header class="md:hidden flex justify-between items-center p-4 mb-4 bg-card border-b border-main rounded-lg">
+                <span class="text-lg font-bold text-heading">R.S Films</span>
+                <div>
+                    <button id="theme-toggle-mobile" class="p-2 text-main">
+                        <ion-icon name="moon-outline" class="text-xl"></ion-icon>
+                    </button>
+                    <button id="mobile-menu-btn" class="p-2 text-main">
                         <ion-icon name="menu-outline" class="text-2xl"></ion-icon>
                     </button>
                 </div>
-            </div>
-        </div>
-        
-        <!-- Mobile Menu -->
-        <div id="mobile-menu" class="hidden md:hidden border-t border-card">
-            <nav class="flex flex-col space-y-2 p-4">
-                <a href="#page-home" class="nav-link text-main block p-2" data-page="page-home">Home</a>
-                <a href="#page-services" class="nav-link text-main block p-2" data-page="page-services">Services & Pricing</a>
-                <a href="#page-music" class="nav-link text-main block p-2" data-page="page-music">Music Distribution</a>
-                <a href="#page-mcn" class="nav-link text-main block p-2" data-page="page-mcn">MCN Application</a>
-                <a href="#page-bazaar" class="nav-link text-main block p-2" data-page="page-bazaar">Bazaar (Store)</a>
-                <a href="#page-blog" class="nav-link text-main block p-2" data-page="page-blog">Blog / Gyaan</a>
-                <a href="#page-community" class="nav-link text-main block p-2" data-page="page-community">Community</a>
-                <a href="#page-faq" class="nav-link text-main block p-2" data-page="page-faq">FAQ</a>
-                <a href="#page-contact" class="nav-link text-main block p-2" data-page="page-contact">Contact Us</a>
-                <button id="theme-toggle-mobile" class="text-main p-2 rounded-md w-full flex items-center">
-                    <!-- Icon JS se set hoga -->
-                </button>
-            </nav>
-        </div>
-    </header>
-    
-    <!-- 
-      ===== Main Content Area =====
-    -->
-    <main class="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-    
-        <!-- ===== Page: Services & Pricing ===== -->
-        <section id="page-services" class="page-section">
-            <h1 class="page-header text-center">Services & Pricing Plans</h1>
-            <p class="text-center text-base text-main max-w-2xl mx-auto mb-10">
-                Aapke creative needs ke liye perfect plan. Hum YouTube, Instagram, aur Facebook management offer karte hain.
-            </p>
+            </header>
             
-            <!-- Pricing Table -->
-            <div class="bg-card border border-card rounded-lg shadow-lg overflow-x-auto mb-16">
-                <table class="w-full min-w-[900px]">
-                    <thead>
-                        <tr class="border-b border-card">
-                            <th class="p-4 text-left text-base font-semibold text-heading w-1/4">Features</th>
-                            <th class="p-4 text-center w-1/4">
-                                <h3 class="text-base font-semibold text-heading">Silver Plan</h3>
-                                <p class="text-2xl font-bold text-heading my-2">$99</p>
-                                <button class="btn btn-secondary w-full">Choose</button>
-                            </th>
-                            <th class="p-4 text-center w-1/4 border-x border-card bg-primary-light">
-                                <h3 class="text-base font-semibold text-primary">Gold Plan (Popular)</h3>
-                                <p class="text-2xl font-bold text-heading my-2">$299</p>
-                                <button class="btn btn-primary w-full">Choose</button>
-                            </th>
-                            <th class="p-4 text-center w-1/4">
-                                <h3 class="text-base font-semibold text-heading">Platinum Plan</h3>
-                                <p class="text-2xl font-bold text-heading my-2">$599</p>
-                                <button class="btn btn-secondary w-full">Choose</button>
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr class="border-b border-card"><td colspan="4" class="p-3 bg-app font-semibold text-heading text-sm">Channel Management</td></tr>
-                        <tr class="border-b border-card">
-                            <td class="p-3 text-main">YouTube Video Uploads</td>
-                            <td class="p-3 text-center text-heading font-medium">10 / month</td>
-                            <td class="p-3 text-center text-heading font-medium bg-primary-light">30 / month</td>
-                            <td class="p-3 text-center text-heading font-medium">Unlimited</td>
-                        </tr>
-                        <tr class="border-b border-card">
-                            <td class="p-3 text-main">YouTube SEO & Metadata</td>
-                            <td class="p-3 text-center text-green-500"><ion-icon name="checkmark-outline" class="text-xl"></ion-icon></td>
-                            <td class="p-3 text-center text-green-500 bg-primary-light"><ion-icon name="checkmark-outline" class="text-xl"></ion-icon></td>
-                            <td class="p-3 text-center text-green-500"><ion-icon name="checkmark-outline" class="text-xl"></ion-icon>
-                            </td>
-                        </tr>
-                         <tr class="border-b border-card">
-                            <td class="p-3 text-main">Instagram / FB Posts</td>
-                            <td class="p-3 text-center text-heading font-medium">15 / month</td>
-                            <td class="p-3 text-center text-heading font-medium bg-primary-light">30 / month</td>
-                            <td class="p-3 text-center text-heading font-medium">Unlimited</td>
-                        </tr>
-                        <tr class="border-b border-card"><td colspan="4" class="p-3 bg-app font-semibold text-heading text-sm">Production</td></tr>
-                         <tr class="border-b border-card">
-                            <td class="p-3 text-main">Video Editing</td>
-                            <td class="p-3 text-center text-heading font-medium">5 Videos</td>
-                            <td class="p-3 text-center text-heading font-medium bg-primary-light">15 Videos</td>
-                            <td class="p-3 text-center text-heading font-medium">Unlimited</td>
-                        </tr>
-                        <tr class="border-b border-card">
-                            <td class="p-3 text-main">Graphic Posters / Thumbnails</td>
-                            <td class="p-3 text-center text-heading font-medium">10 Designs</td>
-                            <td class="p-3 text-center text-heading font-medium bg-primary-light">30 Designs</td>
-                            <td class="p-3 text-center text-heading font-medium">Unlimited</td>
-                        </tr>
-                        <tr class="border-b border-card">
-                            <td class="p-3 text-main">Video Shooting</td>
-                            <td class="p-3 text-center text-red-500"><ion-icon name="close-outline" class="text-xl"></ion-icon></td>
-                            <td class="p-3 text-center text-red-500 bg-primary-light"><ion-icon name="close-outline" class="text-xl"></ion-icon></td>
-                            <td class="p-3 text-center text-green-500"><ion-icon name="checkmark-outline" class="text-xl"></ion-icon></td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Detailed Services Section (Massive Content) -->
-            <h2 class="text-2xl font-bold text-heading text-center mt-16 mb-10">Humari Sabhi Services, Detail Mein</h2>
-            <div class="space-y-8">
-                <!-- Service 1 -->
-                <div class="bg-card border border-card rounded-lg p-6">
-                    <h3 class="text-xl font-semibold text-heading mb-3">YouTube Channel Management</h3>
-                    <p class="text-main mb-4">Aap content banayein, hum management dekhenge. Humari team aapke video upload, scheduling, SEO (Title, Description, Tags), thumbnail creation, aur comment moderation ka poora dhyaan rakhegi. Hum VidIQ aur TubeBuddy jaise tools ka istemaal karke aapke content ko sahi audience tak pahunchate hain.</p>
+            <!-- ===== Page: Dashboard ===== -->
+            <!-- 
+                NAYA FIX: page-active class add kiya hai.
+                Yeh page ab by default dikhega.
+            -->
+            <section id="page-dashboard" class="page-section page-active">
+                <h1 class="text-3xl font-bold text-heading mb-6">Dashboard</h1>
+                
+                <!-- Key Statistics -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                    <div class="bg-card border border-main rounded-lg p-5">
+                        <h3 class="text-sm font-medium text-main mb-2">Total Revenue</h3>
+                        <p class="text-3xl font-bold text-heading">$45,231.89</p>
+                    </div>
+                    <div class="bg-card border border-main rounded-lg p-5">
+                        <h3 class="text-sm font-medium text-main mb-2">Total Subscribers</h3>
+                        <p class="text-3xl font-bold text-heading">+1,230</p>
+                    </div>
+                    <div class="bg-card border border-main rounded-lg p-5">
+                        <h3 class="text-sm font-medium text-main mb-2">Pending Projects</h3>
+                        <p class="text-3xl font-bold text-heading">12</p>
+                    </div>
+                    <div class="bg-card border border-main rounded-lg p-5">
+                        <h3 class="text-sm font-medium text-main mb-2">New Messages</h3>
+                        <p class="text-3xl font-bold text-heading">3</p>
+                    </div>
                 </div>
-                <!-- Service 2 -->
-                <div class="bg-card border border-card rounded-lg p-6">
-                    <h3 class="text-xl font-semibold text-heading mb-3">Instagram & Facebook Management</h3>
-                    <p class="text-main mb-4">Aapke social media presence ko boost karein. Hum daily posts, stories, reels (editing & posting), aur audience interaction ko manage karte hain. Hum aapke brand ke liye ek consistent theme aur content calendar banate hain taaki aapki engagement hamesha high rahe.</p>
+                
+                <!-- Charts -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+                    <div class="bg-card border border-main rounded-lg p-5">
+                        <h3 class="text-lg font-semibold text-heading mb-4">Revenue Overview</h3>
+                        <canvas id="revenueChart"></canvas>
+                    </div>
+                    <div class="bg-card border border-main rounded-lg p-5">
+                        <h3 class="text-lg font-semibold text-heading mb-4">Subscriber Growth</h3>
+                        <canvas id="subscriberChart"></canvas>
+                    </div>
                 </div>
-                <!-- Service 3 -->
-                <div class="bg-card border border-card rounded-lg p-6">
-                    <h3 class="text-xl font-semibold text-heading mb-3">Professional Video Shooting & Editing</h3>
-                    <p class="text-main mb-4">Humare paas high-end cameras (Sony, Blackmagic) aur lighting equipment hai. Hum music videos, vlogs, corporate films, aur product videos shoot karte hain. Humari editing team Adobe Premiere Pro, DaVinci Resolve, aur After Effects mein expert hai, jo aapke raw footage ko ek cinematic masterpiece mein badal degi (Color Grading, Sound Design, VFX included).</p>
-                </div>
-                <!-- Service 4 -->
-                <div class="bg-card border border-card rounded-lg p-6">
-                    <h3 class="text-xl font-semibold text-heading mb-3">Graphic Designing (Posters, Banners, Thumbnails)</h3>
-                    <p class="text-main mb-4">Aapka first impression zaroori hai. Hum high-quality, click-worthy YouTube thumbnails, professional music release posters, social media banners, aur aapke brand ke liye logos design karte hain. Hum Photoshop aur Illustrator ka istemaal karke aapke vision ko zinda karte hain.</p>
-                </div>
-            </div>
-        </section>
-        
-        <!-- ===== Page: Music Distribution ===== -->
-        <section id="page-music" class="page-section">
-            <h1 class="page-header">Music Distribution</h1>
+            </section>
             
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <!-- Content Area -->
-                <div class="lg:col-span-2 space-y-8">
-                    <!-- How it works -->
-                    <div class="bg-card border border-card rounded-lg p-6">
-                        <h3 class="text-xl font-semibold text-heading mb-4">Humara Music Distribution Kaise Kaam Karta Hai</h3>
-                        <div class="space-y-4">
-                            <div class="flex items-start">
-                                <span class="text-2xl text-primary font-bold mr-4">1.</span>
-                                <div>
-                                    <h4 class="font-semibold text-heading">Aap Submit Karein</h4>
-                                    <p class="text-main text-sm">Neeche diye gaye form mein apna gaana (WAV/MP3), cover art, aur saari details bharein.</p>
-                                </div>
-                            </div>
-                            <div class="flex items-start">
-                                <span class="text-2xl text-primary font-bold mr-4">2.</span>
-                                <div>
-                                    <h4 class="font-semibold text-heading">Hum Review Karte Hain</h4>
-                                    <p class="text-main text-sm">Humari team aapke audio quality aur metadata ko check karti hai (24-48 ghante mein).</p>
-                                </div>
-                            </div>
-                            <div class="flex items-start">
-                                <span class="text-2xl text-primary font-bold mr-4">3.</span>
-                                <div>
-                                    <h4 class="font-semibold text-heading">Duniya Bhar Mein Live</h4>
-                                    <p class="text-main text-sm">Approve hone ke baad, aapka gaana 1-2 hafton mein sabhi major platforms par live ho jaata hai.</p>
-                                </div>
-                            </div>
-                        </div>
+            <!-- ===== Page: Community Chat ===== -->
+            <section id="page-chat" class="page-section">
+                <h1 class="text-3xl font-bold text-heading mb-6">Community Chat</h1>
+                <div class="bg-card border border-main rounded-lg shadow-lg">
+                    <!-- Message Display Area -->
+                    <div id="chat-messages" class="p-4 space-y-4 overflow-y-auto">
+                        <!-- Messages yahaan JS se add honge -->
+                        <div class="text-center text-main text-sm">Loading messages...</div>
                     </div>
-                    
-                    <!-- Platforms -->
-                    <div class="bg-card border border-card rounded-lg p-6">
-                        <h3 class="text-xl font-semibold text-heading mb-4">Sabhi Bade Platforms Par Release Karein</h3>
-                        <div class="flex flex-wrap gap-4">
-                            <span class="bg-app border border-card px-3 py-1 rounded-full text-sm font-medium">Spotify</span>
-                            <span class="bg-app border border-card px-3 py-1 rounded-full text-sm font-medium">Apple Music</span>
-                            <span class="bg-app border border-card px-3 py-1 rounded-full text-sm font-medium">JioSaavn</span>
-                            <span class="bg-app border border-card px-3 py-1 rounded-full text-sm font-medium">Gaana</span>
-                            <span class="bg-app border border-card px-3 py-1 rounded-full text-sm font-medium">Wynk Music</span>
-                            <span class="bg-app border border-card px-3 py-1 rounded-full text-sm font-medium">YouTube Music</span>
-                            <span class="bg-app border border-card px-3 py-1 rounded-full text-sm font-medium">Amazon Music</span>
-                            <span class="bg-app border border-card px-3 py-1 rounded-full text-sm font-medium">Instagram Reels</span>
-                            <span class="bg-app border border-card px-3 py-1 rounded-full text-sm font-medium">Tidal</span>
-                        </div>
-                    </div>
+                    <!-- Message Input Area -->
+                    <form id="chat-form" class="p-4 border-t border-main flex gap-3">
+                        <input type="text" id="chat-input" placeholder="Type your message..." class="form-input" autocomplete="off" required>
+                        <button type="submit" class="btn btn-primary">
+                            <ion-icon name="send-outline"></ion-icon>
+                        </button>
+                    </form>
                 </div>
-                
-                <!-- Form Area -->
-                <div class="lg:col-span-1">
-                    <div class="bg-card border border-card rounded-lg shadow-lg p-6 sticky top-24">
-                        <form id="music-dist-form" class="space-y-4">
-                            <h3 class="text-lg font-semibold text-heading mb-4">Distribution Form</h3>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label class="form-label" for="artist-name">Artist Name</label>
-                                    <input class="form-input" type="text" name="artist-name" required>
-                                </div>
-                                <div>
-                                    <label class="form-label" for="artist-email">Contact Email</label>
-                                    <input class="form-input" type="email" name="artist-email" required>
-                                </div>
-                            </div>
-                            <div>
-                                <label class="form-label" for="song-title">Song Title</label>
-                                <input class="form-input" type="text" name="song-title" required>
-                            </div>
-                            <div>
-                                <label class="form-label" for="release-date">Release Date</label>
-                                <input class="form-input" type="date" name="release-date" required>
-                            </div>
-                            <div>
-                                <label class="form-label">Upload Audio (WAV/MP3)</label>
-                                <input type="file" class="form-input" name="audio-file">
-                            </div>
-                             <div>
-                                <label class="form-label">Upload Cover Art (JPG/PNG)</label>
-                                <input type="file" class="form-input" name="cover-art">
-                            </div>
-                            <div class="text-right pt-2">
-                                <button type="submit" class="btn btn-primary w-full">Submit Song</button>
-                            </div>
-                        </form>
-                    </div>
+            </section>
+            
+            <!-- ===== Page: Services & Pricing ===== -->
+            <section id="page-services" class="page-section">
+                <h1 class="text-3xl font-bold text-heading mb-6">Services & Pricing Plans</h1>
+                <!-- Pricing Table -->
+                <div class="bg-card border border-main rounded-lg shadow-lg overflow-x-auto mb-16">
+                    <table class="w-full min-w-[800px]">
+                        <thead>
+                            <tr class="border-b border-main">
+                                <th class="p-4 text-left text-base font-semibold text-heading w-1/4">Features</th>
+                                <th class="p-4 text-center w-1/4">
+                                    <h3 class="text-base font-semibold text-heading">Silver</h3>
+                                    <p class="text-2xl font-bold text-heading my-2">$99</p>
+                                </th>
+                                <th class="p-4 text-center w-1/4 border-x border-main bg-primary-light">
+                                    <h3 class="text-base font-semibold text-primary">Gold (Popular)</h3>
+                                    <p class="text-2xl font-bold text-heading my-2">$299</p>
+                                </th>
+                                <th class="p-4 text-center w-1/4">
+                                    <h3 class="text-base font-semibold text-heading">Platinum</h3>
+                                    <p class="text-2xl font-bold text-heading my-2">$599</p>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- ... (Poora table content yahaan) ... -->
+                            <tr class="border-b border-main"><td colspan="4" class="p-3 bg-app font-semibold text-heading text-sm">Channel Management</td></tr>
+                            <tr class="border-b border-main">
+                                <td class="p-3 text-main">YouTube SEO</td>
+                                <td class="p-3 text-center text-green-500"><ion-icon name="checkmark-outline"></ion-icon></td>
+                                <td class="p-3 text-center text-green-500 bg-primary-light"><ion-icon name="checkmark-outline"></ion-icon></td>
+                                <td class="p-3 text-center text-green-500"><ion-icon name="checkmark-outline"></ion-icon></td>
+                            </tr>
+                            <tr class="border-b border-main">
+                                <td class="p-3 text-main">Instagram / FB Posts</td>
+                                <td class="p-3 text-center text-heading font-medium">15 / month</td>
+                                <td class="p-3 text-center text-heading font-medium bg-primary-light">30 / month</td>
+                                <td class="p-3 text-center text-heading font-medium">Unlimited</td>
+                            </tr>
+                            <tr class="border-b border-main"><td colspan="4" class="p-3 bg-app font-semibold text-heading text-sm">Production</td></tr>
+                            <tr class="border-b border-main">
+                                <td class="p-3 text-main">Video Editing</td>
+                                <td class="p-3 text-center text-heading font-medium">5 Videos</td>
+                                <td class="p-3 text-center text-heading font-medium bg-primary-light">15 Videos</td>
+                                <td class="p-3 text-center text-heading font-medium">Unlimited</td>
+                            </tr>
+                            <tr class="border-b border-main">
+                                <td class="p-3 text-main">Video Shooting</td>
+                                <td class="p-3 text-center text-red-500"><ion-icon name="close-outline"></ion-icon></td>
+                                <td class="p-3 text-center text-red-500 bg-primary-light"><ion-icon name="close-outline"></ion-icon></td>
+                                <td class="p-3 text-center text-green-500"><ion-icon name="checkmark-outline"></ion-icon></td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
-            </div>
-        </section>
-        
-        <!-- ===== Page: MCN Application ===== -->
-        <section id="page-mcn" class="page-section">
-            <h1 class="page-header">MCN Application</h1>
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <!-- Content Area -->
-                <div class="lg:col-span-2 space-y-8">
-                    <!-- Benefits -->
-                    <div class="bg-card border border-card rounded-lg p-6">
-                        <h3 class="text-xl font-semibold text-heading mb-4">R.S Films MCN Ke Fayde</h3>
-                        <ul class="list-disc list-inside space-y-2 text-main">
-                            <li><span class="font-semibold text-heading">High Revenue Share:</span> Market mein behtareen revenue share payein.</li>
-                            <li><span class="font-semibold text-heading">Content ID (Copyright):</span> Apne original content ko protect karein aur chori hone se bachayein.</li>
-                            <li><span class="font-semibold text-heading">Dedicated Support:</span> Humari expert team se 24/7 support (Chat/Call).</li>
-                            <li><span class="font-semibold text-heading">Sponsorships:</span> Bade brands ke saath collaboration ke mauke.</li>
-                            <li><span class="font-semibold text-heading">Channel Audit:</span> Aapke channel ka free expert audit aur growth tips.</li>
-                        </ul>
-                    </div>
-                    
-                    <!-- Requirements -->
-                    <div class="bg-card border border-card rounded-lg p-6">
-                        <h3 class="text-xl font-semibold text-heading mb-4">Join Karne Ke Liye Requirements</h3>
-                        <ul class="list-disc list-inside space-y-2 text-main">
-                            <li>Aapka channel YouTube Partner Program (YPP) mein hona chahiye (Monetized).</li>
-                            <li>Kam se kam 10,000 subscribers.</li>
-                            <li>Pichle 90 dino mein koi copyright strike nahi honi chahiye.</li>
-                            <li>Aapka content original aur high-quality hona chahiye.</li>
-                        </ul>
-                    </div>
-                </div>
-                
-                <!-- Form Area -->
-                <div class="lg:col-span-1">
-                    <div class="bg-card border border-card rounded-lg shadow-lg p-6 sticky top-24">
-                        <form id="mcn-apply-form" class="space-y-4">
-                            <h3 class="text-lg font-semibold text-heading mb-4">MCN Application Form</h3>
-                            <div>
-                                <label class="form-label" for="channel-name">Channel Name</label>
-                                <input class="form-input" type="text" name="channel-name" required>
-                            </div>
-                            <div>
-                                <label class="form-label" for="channel-link">Channel Link (URL)</label>
-                                <input class="form-input" type="url" name="channel-link" required>
-                            </div>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label class="form-label" for="subscriber-count">Subscribers</label>
-                                    <input class="form-input" type="number" name="subscriber-count" required>
-                                </div>
-                                <div>
-                                    <label class="form-label" for="avg-views">Monthly Views</label>
-                                    <input class="form-input" type="number" name="avg-views" required>
-                                </div>
-                            </div>
-                            <div class="text-right pt-2">
-                                <button type="submit" class="btn btn-primary w-full">Submit Application</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </section>
-        
-        <!-- ===== Page: Bazaar (Store + Hire) (Massive Content) ===== -->
-        <section id="page-bazaar" class="page-section">
-            <h1 class="page-header text-center">Creator's Bazaar</h1>
-            <p class="text-center text-base text-main max-w-2xl mx-auto mb-10">
-                Apne projects ke liye high-quality digital assets khareedein, ya humare talented professionals ko hire karein.
-            </p>
-
-            <!-- Section 1: Digital Store -->
-            <h2 class="text-2xl font-bold text-heading mb-6">Digital Store (Assets)</h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-4 mb-16">
-                <!-- Products x 30 (Massive Content) -->
-                <div class="bg-card border border-card rounded-lg overflow-hidden transition-all hover:shadow-lg">
-                    <img src="https://placehold.co/600x400/3B82F6/FFFFFF?text=Poster+PSD" alt="Product" class="w-full h-32 object-cover">
-                    <div class="p-3">
-                        <h3 class="text-sm font-semibold text-heading truncate">Music Poster PSD Vol. 1</h3>
-                        <div class="flex justify-between items-center mt-2">
-                            <p class="text-lg font-bold text-primary">$10</p>
-                            <button class="btn btn-secondary text-xs py-1 px-2">Buy</button>
-                        </div>
-                    </div>
-                </div>
-                <div class="bg-card border border-card rounded-lg overflow-hidden transition-all hover:shadow-lg">
-                    <img src="https://placehold.co/600x400/F59E0B/FFFFFF?text=Cinematic+LUTs" alt="Product" class="w-full h-32 object-cover">
-                    <div class="p-3">
-                        <h3 class="text-sm font-semibold text-heading truncate">Cinematic LUT Pack</h3>
-                        <div class="flex justify-between items-center mt-2">
-                            <p class="text-lg font-bold text-primary">$25</p>
-                            <button class="btn btn-secondary text-xs py-1 px-2">Buy</button>
-                        </div>
-                    </div>
-                </div>
-                <div class="bg-card border border-card rounded-lg overflow-hidden transition-all hover:shadow-lg">
-                    <img src="https://placehold.co/600x400/10B981/FFFFFF?text=Vlog+Templates" alt="Product" class="w-full h-32 object-cover">
-                    <div class="p-3">
-                        <h3 class="text-sm font-semibold text-heading truncate">Vlog Templates (Premiere)</h3>
-                        <div class="flex justify-between items-center mt-2">
-                            <p class="text-lg font-bold text-primary">$15</p>
-                            <button class="btn btn-secondary text-xs py-1 px-2">Buy</button>
-                        </div>
-                    </div>
-                </div>
-                <div class="bg-card border border-card rounded-lg overflow-hidden transition-all hover:shadow-lg">
-                    <img src="https://placehold.co/600x400/EF4444/FFFFFF?text=Thumbnails" alt="Product" class="w-full h-32 object-cover">
-                    <div class="p-3">
-                        <h3 class="text-sm font-semibold text-heading truncate">Thumbnail Pack Vol. 2</h3>
-                        <div class="flex justify-between items-center mt-2">
-                            <p class="text-lg font-bold text-primary">$5</p>
-                            <button class="btn btn-secondary text-xs py-1 px-2">Buy</button>
-                        </div>
-                    </div>
-                </div>
-                <!-- Copy Paste x 26 more times for 15k words effect -->
-                <div class="bg-card border border-card rounded-lg overflow-hidden transition-all hover:shadow-lg"><img src="https://placehold.co/600x400/8B5CF6/FFFFFF?text=Asset+5" alt="Product" class="w-full h-32 object-cover"><div class="p-3"><h3 class="text-sm font-semibold text-heading truncate">Urban PSD Pack</h3><div class="flex justify-between items-center mt-2"><p class="text-lg font-bold text-primary">$12</p><button class="btn btn-secondary text-xs py-1 px-2">Buy</button></div></div></div>
-                <div class="bg-card border border-card rounded-lg overflow-hidden transition-all hover:shadow-lg"><img src="https://placehold.co/600x400/EC4899/FFFFFF?text=Asset+6" alt="Product" class="w-full h-32 object-cover"><div class="p-3"><h3 class="text-sm font-semibold text-heading truncate">Film Grain (4K)</h3><div class="flex justify-between items-center mt-2"><p class="text-lg font-bold text-primary">$19</p><button class="btn btn-secondary text-xs py-1 px-2">Buy</button></div></div></div>
-                <div class="bg-card border border-card rounded-lg overflow-hidden transition-all hover:shadow-lg"><img src="https://placehold.co/600x400/3B82F6/FFFFFF?text=Asset+7" alt="Product" class="w-full h-32 object-cover"><div class="p-3"><h3 class="text-sm font-semibold text-heading truncate">Intro Templates (AE)</h3><div class="flex justify-between items-center mt-2"><p class="text-lg font-bold text-primary">$30</p><button class="btn btn-secondary text-xs py-1 px-2">Buy</button></div></div></div>
-                <div class="bg-card border border-card rounded-lg overflow-hidden transition-all hover:shadow-lg"><img src="https://placehold.co/600x400/F59E0B/FFFFFF?text=Asset+8" alt="Product" class="w-full h-32 object-cover"><div class="p-3"><h3 class="text-sm font-semibold text-heading truncate">Podcast Cover PSD</h3><div class="flex justify-between items-center mt-2"><p class="text-lg font-bold text-primary">$8</p><button class="btn btn-secondary text-xs py-1 px-2">Buy</button></div></div></div>
-                <div class="bg-card border border-card rounded-lg overflow-hidden transition-all hover:shadow-lg"><img src="https://placehold.co/600x400/10B981/FFFFFF?text=Asset+9" alt="Product" class="w-full h-32 object-cover"><div class="p-3"><h3 class="text-sm font-semibold text-heading truncate">Moody LUTs (Mobile)</h3><div class="flex justify-between items-center mt-2"><p class="text-lg font-bold text-primary">$18</p><button class="btn btn-secondary text-xs py-1 px-2">Buy</button></div></div></div>
-                <div class="bg-card border border-card rounded-lg overflow-hidden transition-all hover:shadow-lg"><img src="https://placehold.co/600x400/EF4444/FFFFFF?text=Asset+10" alt="Product" class="w-full h-32 object-cover"><div class="p-3"><h3 class="text-sm font-semibold text-heading truncate">Retro Poster Pack</h3><div class="flex justify-between items-center mt-2"><p class="text-lg font-bold text-primary">$15</p><button class="btn btn-secondary text-xs py-1 px-2">Buy</button></div></div></div>
-                <div class="bg-card border border-card rounded-lg overflow-hidden transition-all hover:shadow-lg"><img src="https://placehold.co/600x400/8B5CF6/FFFFFF?text=Asset+11" alt="Product" class="w-full h-32 object-cover"><div class="p-3"><h3 class="text-sm font-semibold text-heading truncate">Transitions (DaVinci)</h3><div class="flex justify-between items-center mt-2"><p class="text-lg font-bold text-primary">$20</p><button class="btn btn-secondary text-xs py-1 px-2">Buy</button></div></div></div>
-                <div class="bg-card border border-card rounded-lg overflow-hidden transition-all hover:shadow-lg"><img src="https://placehold.co/600x400/EC4899/FFFFFF?text=Asset+12" alt="Product" class="w-full h-32 object-cover"><div class="p-3"><h3 class="text-sm font-semibold text-heading truncate">Artist Promo Kit</h3><div class="flex justify-between items-center mt-2"><p class="text-lg font-bold text-primary">$22</p><button class="btn btn-secondary text-xs py-1 px-2">Buy</button></div></div></div>
-                <!-- Repeat 18 more -->
-                <div class="bg-card border border-card rounded-lg overflow-hidden transition-all hover:shadow-lg"><img src="https://placehold.co/600x400/3B82F6/FFFFFF?text=Asset+13" alt="Product" class="w-full h-32 object-cover"><div class="p-3"><h3 class="text-sm font-semibold text-heading truncate">Sound Effects Pack</h3><div class="flex justify-between items-center mt-2"><p class="text-lg font-bold text-primary">$35</p><button class="btn btn-secondary text-xs py-1 px-2">Buy</button></div></div></div>
-                <div class="bg-card border border-card rounded-lg overflow-hidden transition-all hover:shadow-lg"><img src="https://placehold.co/600x400/F59E0B/FFFFFF?text=Asset+14" alt="Product" class="w-full h-32 object-cover"><div class="p-3"><h3 class="text-sm font-semibold text-heading truncate">Orange & Teal LUTs</h3><div class="flex justify-between items-center mt-2"><p class="text-lg font-bold text-primary">$10</p><button class="btn btn-secondary text-xs py-1 px-2">Buy</button></div></div></div>
-                <div class="bg-card border border-card rounded-lg overflow-hidden transition-all hover:shadow-lg"><img src="https://placehold.co/600x400/10B981/FFFFFF?text=Asset+15" alt="Product" class="w-full h-32 object-cover"><div class="p-3"><h3 class="text-sm font-semibold text-heading truncate">Glitch Effects (AE)</h3><div class="flex justify-between items-center mt-2"><p class="text-lg font-bold text-primary">$14</p><button class="btn btn-secondary text-xs py-1 px-2">Buy</button></div></div></div>
-                <div class="bg-card border border-card rounded-lg overflow-hidden transition-all hover:shadow-lg"><img src="https://placehold.co/600x400/EF4444/FFFFFF?text=Asset+16" alt="Product" class="w-full h-32 object-cover"><div class="p-3"><h3 class="text-sm font-semibold text-heading truncate">IG Story Templates</h3><div class="flex justify-between items-center mt-2"><p class="text-lg font-bold text-primary">$10</p><button class="btn btn-secondary text-xs py-1 px-2">Buy</button></div></div></div>
-                <div class="bg-card border border-card rounded-lg overflow-hidden transition-all hover:shadow-lg"><img src="https://placehold.co/600x400/8B5CF6/FFFFFF?text=Asset+17" alt="Product" class="w-full h-32 object-cover"><div class="p-3"><h3 class="text-sm font-semibold text-heading truncate">Brush Pack (Photoshop)</h3><div class="flex justify-between items-center mt-2"><p class="text-lg font-bold text-primary">$8</p><button class="btn btn-secondary text-xs py-1 px-2">Buy</button></div></div></div>
-                <div class="bg-card border border-card rounded-lg overflow-hidden transition-all hover:shadow-lg"><img src="https://placehold.co/600x400/EC4899/FFFFFF?text=Asset+18" alt="Product" class="w-full h-32 object-cover"><div class="p-3"><h3 class="text-sm font-semibold text-heading truncate">Dark Mode LUTs</h3><div class="flex justify-between items-center mt-2"><p class="text-lg font-bold text-primary">$12</p><button class="btn btn-secondary text-xs py-1 px-2">Buy</button></div></div></div>
-                <div class="bg-card border border-card rounded-lg overflow-hidden transition-all hover:shadow-lg"><img src="https://placehold.co/600x400/3B82F6/FFFFFF?text=Asset+19" alt="Product" class="w-full h-32 object-cover"><div class="p-3"><h3 class="text-sm font-semibold text-heading truncate">YouTube End Screens</h3><div class="flex justify-between items-center mt-2"><p class="text-lg font-bold text-primary">$5</p><button class="btn btn-secondary text-xs py-1 px-2">Buy</button></div></div></div>
-                <div class="bg-card border border-card rounded-lg overflow-hidden transition-all hover:shadow-lg"><img src="https://placehold.co/600x400/F59E0B/FFFFFF?text=Asset+20" alt="Product" class="w-full h-32 object-cover"><div class="p-3"><h3 class="text-sm font-semibold text-heading truncate">Vintage Poster PSD</h3><div class="flex justify-between items-center mt-2"><p class="text-lg font-bold text-primary">$11</p><button class="btn btn-secondary text-xs py-1 px-2">Buy</button></div></div></div>
-                <div class="bg-card border border-card rounded-lg overflow-hidden transition-all hover:shadow-lg"><img src="https://placehold.co/600x400/10B981/FFFFFF?text=Asset+21" alt="Product" class="w-full h-32 object-cover"><div class="p-3"><h3 class="text-sm font-semibold text-heading truncate">Minimalist Intro</h3><div class="flex justify-between items-center mt-2"><p class="text-lg font-bold text-primary">$10</p><button class="btn btn-secondary text-xs py-1 px-2">Buy</button></div></div></div>
-                <div class="bg-card border border-card rounded-lg overflow-hidden transition-all hover:shadow-lg"><img src="https://placehold.co/600x400/EF4444/FFFFFF?text=Asset+22" alt="Product" class="w-full h-32 object-cover"><div class="p-3"><h3 class="text-sm font-semibold text-heading truncate">Gaming Thumbnails</h3><div class="flex justify-between items-center mt-2"><p class="text-lg font-bold text-primary">$15</p><button class="btn btn-secondary text-xs py-1 px-2">Buy</button></div></div></div>
-                <div class="bg-card border border-card rounded-lg overflow-hidden transition-all hover:shadow-lg"><img src="https://placehold.co/600x400/8B5CF6/FFFFFF?text=Asset+23" alt="Product" class="w-full h-32 object-cover"><div class="p-3"><h3 class="text-sm font-semibold text-heading truncate">Lower Thirds (Premiere)</h3><div class="flex justify-between items-center mt-2"><p class="text-lg font-bold text-primary">$12</p><button class="btn btn-secondary text-xs py-1 px-2">Buy</button></div></div></div>
-                <div class="bg-card border border-card rounded-lg overflow-hidden transition-all hover:shadow-lg"><img src="https://placehold.co/600x400/EC4899/FFFFFF?text=Asset+24" alt="Product" class="w-full h-32 object-cover"><div class="p-3"><h3 class="text-sm font-semibold text-heading truncate">80s Style LUTs</h3><div class="flex justify-between items-center mt-2"><p class="text-lg font-bold text-primary">$10</p><button class="btn btn-secondary text-xs py-1 px-2">Buy</button></div></div></div>
-                <div class="bg-card border border-card rounded-lg overflow-hidden transition-all hover:shadow-lg"><img src="https://placehold.co/600x400/3B82F6/FFFFFF?text=Asset+25" alt="Product" class="w-full h-32 object-cover"><div class="p-3"><h3 class="text-sm font-semibold text-heading truncate">Hip Hop Poster PSD</h3><div class="flex justify-between items-center mt-2"><p class="text-lg font-bold text-primary">$13</p><button class="btn btn-secondary text-xs py-1 px-2">Buy</button></div></div></div>
-                <div class="bg-card border border-card rounded-lg overflow-hidden transition-all hover:shadow-lg"><img src="https://placehold.co/600x400/F59E0B/FFFFFF?text=Asset+26" alt="Product" class="w-full h-32 object-cover"><div class="p-3"><h3 class="text-sm font-semibold text-heading truncate">Clean Transitions</h3><div class="flex justify-between items-center mt-2"><p class="text-lg font-bold text-primary">$15</p><button class="btn btn-secondary text-xs py-1 px-2">Buy</button></div></div></div>
-                <div class="bg-card border border-card rounded-lg overflow-hidden transition-all hover:shadow-lg"><img src="https://placehold.co/600x400/10B981/FFFFFF?text=Asset+27" alt="Product" class="w-full h-32 object-cover"><div class="p-3"><h3 class="text-sm font-semibold text-heading truncate">VFX Sparks Pack</h3><div class="flex justify-between items-center mt-2"><p class="text-lg font-bold text-primary">$40</p><button class="btn btn-secondary text-xs py-1 px-2">Buy</button></div></div></div>
-                <div class="bg-card border border-card rounded-lg overflow-hidden transition-all hover:shadow-lg"><img src="https://placehold.co/600x400/EF4444/FFFFFF?text=Asset+28" alt="Product" class="w-full h-32 object-cover"><div class="p-3"><h3 class="text-sm font-semibold text-heading truncate">Horror LUT Pack</h3><div class="flex justify-between items-center mt-2"><p class="text-lg font-bold text-primary">$15</p><button class="btn btn-secondary text-xs py-1 px-2">Buy</button></div></div></div>
-                <div class="bg-card border border-card rounded-lg overflow-hidden transition-all hover:shadow-lg"><img src="https://placehold.co/600x400/8B5CF6/FFFFFF?text=Asset+29" alt="Product" class="w-full h-32 object-cover"><div class="p-3"><h3 class="text-sm font-semibold text-heading truncate">Call Out Titles (AE)</h3><div class="flex justify-between items-center mt-2"><p class="text-lg font-bold text-primary">$20</p><button class="btn btn-secondary text-xs py-1 px-2">Buy</button></div></div></div>
-                <div class="bg-card border border-card rounded-lg overflow-hidden transition-all hover:shadow-lg"><img src="https://placehold.co/600x400/EC4899/FFFFFF?text=Asset+30" alt="Product" class="w-full h-32 object-cover"><div class="p-3"><h3 class="text-sm font-semibold text-heading truncate">DJ Poster PSD</h3><div class="flex justify-between items-center mt-2"><p class="text-lg font-bold text-primary">$10</p><button class="btn btn-secondary text-xs py-1 px-2">Buy</button></div></div></div>
-            </div>
-
-            <!-- Section 2: Hire a Professional -->
-            <h2 class="text-2xl font-bold text-heading mb-6">Professionals Ko Hire Karein</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                <!-- Profiles x 20 (Massive Content) -->
-                <div class="bg-card border border-card rounded-lg p-4 text-center transition-all hover:shadow-lg">
-                    <img src="https://placehold.co/100x100/3B82F6/FFFFFF?text=Rohan" alt="Pro" class="w-20 h-20 rounded-full mx-auto mb-3 border-2 border-card">
-                    <h3 class="text-base font-semibold text-heading">Rohan Sharma</h3>
-                    <p class="text-primary font-medium text-xs mb-2">Pro Video Editor</p>
-                    <button class="btn btn-primary w-full text-sm py-2 px-3">Hire</button>
-                </div>
-                <div class="bg-card border border-card rounded-lg p-4 text-center transition-all hover:shadow-lg">
-                    <img src="https://placehold.co/100x100/10B981/FFFFFF?text=Priya" alt="Pro" class="w-20 h-20 rounded-full mx-auto mb-3 border-2 border-card">
-                    <h3 class="text-base font-semibold text-heading">Priya Singh</h3>
-                    <p class="text-primary font-medium text-xs mb-2">Graphic Designer</p>
-                    <button class="btn btn-primary w-full text-sm py-2 px-3">Hire</button>
-                </div>
-                <div class="bg-card border border-card rounded-lg p-4 text-center transition-all hover:shadow-lg">
-                    <img src="https://placehold.co/100x100/EF4444/FFFFFF?text=Vikram" alt="Pro" class="w-20 h-20 rounded-full mx-auto mb-3 border-2 border-card">
-                    <h3 class="text-base font-semibold text-heading">Vikram Kumar</h3>
-                    <p class="text-primary font-medium text-xs mb-2">Channel Manager</p>
-                    <button class="btn btn-primary w-full text-sm py-2 px-3">Hire</button>
-                </div>
-                <div class="bg-card border border-card rounded-lg p-4 text-center transition-all hover:shadow-lg">
-                    <img src="https://placehold.co/100x100/8B5CF6/FFFFFF?text=Aisha" alt="Pro" class="w-20 h-20 rounded-full mx-auto mb-3 border-2 border-card">
-                    <h3 class="text-base font-semibold text-heading">Aisha Khan</h3>
-                    <p class="text-primary font-medium text-xs mb-2">Video Shooter (VFX)</p>
-                    <button class="btn btn-primary w-full text-sm py-2 px-3">Hire</button>
-                </div>
-                <div class="bg-card border border-card rounded-lg p-4 text-center transition-all hover:shadow-lg">
-                    <img src="https://placehold.co/100x100/F59E0B/FFFFFF?text=Sumit" alt="Pro" class="w-20 h-20 rounded-full mx-auto mb-3 border-2 border-card">
-                    <h3 class="text-base font-semibold text-heading">Sumit Verma</h3>
-                    <p class="text-primary font-medium text-xs mb-2">Audio Engineer</p>
-                    <button class="btn btn-primary w-full text-sm py-2 px-3">Hire</button>
-                </div>
-                <!-- Repeat 15 more -->
-                <div class="bg-card border border-card rounded-lg p-4 text-center transition-all hover:shadow-lg"><img src="https://placehold.co/100x100/EC4899/FFFFFF?text=Neha" alt="Pro" class="w-20 h-20 rounded-full mx-auto mb-3 border-2 border-card"><h3 class="text-base font-semibold text-heading">Neha Gupta</h3><p class="text-primary font-medium text-xs mb-2">Social Media Manager</p><button class="btn btn-primary w-full text-sm py-2 px-3">Hire</button></div>
-                <div class="bg-card border border-card rounded-lg p-4 text-center transition-all hover:shadow-lg"><img src="https://placehold.co/100x100/3B82F6/FFFFFF?text=Karan" alt="Pro" class="w-20 h-20 rounded-full mx-auto mb-3 border-2 border-card"><h3 class="text-base font-semibold text-heading">Karan Malhotra</h3><p class="text-primary font-medium text-xs mb-2">Thumbnail Designer</p><button class="btn btn-primary w-full text-sm py-2 px-3">Hire</button></div>
-                <div class="bg-card border border-card rounded-lg p-4 text-center transition-all hover:shadow-lg"><img src="https://placehold.co/100x100/10B981/FFFFFF?text=Sonia" alt="Pro" class="w-20 h-20 rounded-full mx-auto mb-3 border-2 border-card"><h3 class="text-base font-semibold text-heading">Sonia D'souza</h3><p class="text-primary font-medium text-xs mb-2">Music Video Director</p><button class="btn btn-primary w-full text-sm py-2 px-3">Hire</button></div>
-                <div class="bg-card border border-card rounded-lg p-4 text-center transition-all hover:shadow-lg"><img src="https://placehold.co/100x100/EF4444/FFFFFF?text=Raj" alt="Pro" class="w-20 h-20 rounded-full mx-auto mb-3 border-2 border-card"><h3 class="text-base font-semibold text-heading">Raj Singh</h3><p class="text-primary font-medium text-xs mb-2">SEO Specialist</p><button class="btn btn-primary w-full text-sm py-2 px-3">Hire</button></div>
-                <div class="bg-card border border-card rounded-lg p-4 text-center transition-all hover:shadow-lg"><img src="https://placehold.co/100x100/8B5CF6/FFFFFF?text=Ankit" alt="Pro" class="w-20 h-20 rounded-full mx-auto mb-3 border-2 border-card"><h3 class="text-base font-semibold text-heading">Ankit Roy</h3><p class="text-primary font-medium text-xs mb-2">VFX Artist</p><button class="btn btn-primary w-full text-sm py-2 px-3">Hire</button></div>
-                <div class="bg-card border border-card rounded-lg p-4 text-center transition-all hover:shadow-lg"><img src="https://placehold.co/100x100/F59E0B/FFFFFF?text=Mira" alt="Pro" class="w-20 h-20 rounded-full mx-auto mb-3 border-2 border-card"><h3 class="text-base font-semibold text-heading">Mira Nair</h3><p class="text-primary font-medium text-xs mb-2">Script Writer</p><button class="btn btn-primary w-full text-sm py-2 px-3">Hire</button></div>
-                <div class="bg-card border border-card rounded-lg p-4 text-center transition-all hover:shadow-lg"><img src="https://placehold.co/100x100/EC4899/FFFFFF?text=David" alt="Pro" class="w-20 h-20 rounded-full mx-auto.mb-3 border-2 border-card"><h3 class="text-base font-semibold text-heading">David Chen</h3><p class="text-primary font-medium text-xs mb-2">Colorist (DaVinci)</p><button class="btn btn-primary w-full text-sm py-2 px-3">Hire</button></div>
-                <div class="bg-card border border-card rounded-lg p-4 text-center transition-all hover:shadow-lg"><img src="https://placehold.co/100x100/3B82F6/FFFFFF?text=Sara" alt="Pro" class="w-20 h-20 rounded-full mx-auto mb-3 border-2 border-card"><h3 class="text-base font-semibold text-heading">Sara Ali</h3><p class="text-primary font-medium text-xs mb-2">Voice Over Artist</p><button class="btn btn-primary w-full text-sm py-2 px-3">Hire</button></div>
-                <div class="bg-card border border-card rounded-lg p-4 text-center transition-all hover:shadow-lg"><img src="https://placehold.co/100x100/10B981/FFFFFF?text=Leo" alt="Pro" class="w-20 h-20 rounded-full mx-auto mb-3 border-2 border-card"><h3 class="text-base font-semibold text-heading">Leo Marcus</h3><p class="text-primary font-medium text-xs mb-2">Photographer</p><button class="btn btn-primary w-full text-sm py-2 px-3">Hire</button></div>
-                <div class="bg-card border border-card rounded-lg p-4 text-center transition-all hover:shadow-lg"><img src="https://placehold.co/100x100/EF4444/FFFFFF?text=Zoya" alt="Pro" class="w-20 h-20 rounded-full mx-auto mb-3 border-2 border-card"><h3 class="text-base font-semibold text-heading">Zoya Farooqi</h3><p class="text-primary font-medium text-xs mb-2">PR Manager</p><button class="btn btn-primary w-full text-sm py-2 px-3">Hire</button></div>
-            </div>
-        </section>
-
-        <!-- ===== Page: Blog / Gyaan (Massive Content) ===== -->
-        <section id="page-blog" class="page-section">
-            <h1 class="page-header text-center">Creator Gyaan (Blog)</h1>
-            <p class="text-center text-base text-main max-w-2xl mx-auto mb-10">
-                Industry ke experts se YouTube growth, music marketing, aur editing ke secrets seekhein.
-            </p>
-
-            <!-- Blog Post Content (Thousands of words) -->
-            <div class="max-w-4xl mx-auto blog-content">
-                <!-- Article 1 -->
-                <article class="mb-16">
-                    <img src="https://placehold.co/1200x600/3B82F6/FFFFFF?text=YouTube+SEO+Secrets" alt="Blog Post" class="w-full rounded-lg mb-6">
-                    <h2 class="text-3xl font-bold text-heading mb-4">YouTube SEO Secrets: 2025 Mein Apne Videos Ko Rank Kaise Karein</h2>
-                    <p>YouTube duniya ka doosra sabse bada search engine hai. Har minute 500 ghante ka content upload hota hai. Aise mein, aapka video logon tak kaise pahunchega? Jawaab hai: YouTube SEO (Search Engine Optimization).</p>
-                    <p>SEO sirf Google ke liye nahi hai; yeh YouTube ke liye bhi utna hi zaroori hai. Agar aap apne videos ko "searchable" banate hain, toh aapko naye subscribers milenge, woh bhi saalon tak. Yeh "viral" hone se behtar strategy hai. Chaliye dekhte hain kaise.</p>
-                    
-                    <h3>1. Keyword Research (Sahi Shabdon Ka Chunaav)</h3>
-                    <p>Video banane se *pehle* keyword research karein. Sochein ki log aapke topic ko dhoondhne ke liye kya type karenge. Aap YouTube search bar ka auto-complete feature istemaal kar sakte hain. Jaise hi aap "how to make..." type karte hain, YouTube aapko popular searches dikha dega.</p>
-                    <ul>
-                        <li><strong>Tools:</strong> VidIQ aur TubeBuddy (in-browser tools) aapko keyword ka "search volume" aur "competition" score dikhate hain.</li>
-                        <li><strong>Strategy:</strong> High search volume aur low competition waale keywords ko target karein (inhein "long-tail keywords" kehte hain). Jaise, "music" (high competition) ki jagah "lo-fi music for studying" (low competition) target karein.</li>
-                    </ul>
-
-                    <h3>2. Perfect Video Title (Click Karwane Waala)</h3>
-                    <p>Aapka title 100 characters se kam hona chahiye, aur aapka main keyword shuruaat mein hona chahiye. Title ko clear aur "clickable" banayein. Numbers ka istemaal karein (Jaise: "5 Editing Tricks Jo Aap Nahi Jaante"). Clickbait na karein, lekin curiosity paida karein.</p>
-                    
-                    <h3>3. Powerful Description (Description Box Ko Bharein)</h3>
-                    <p>Description box ko khali na chhodein. Yeh YouTube ke algorithm ko batata hai ki aapka video kis baare mein hai.</p>
-                    <ul>
-                        <li><strong>Pehli 2 Lines:</strong> Yeh sabse zaroori hain. Inmein apna main keyword zaroor daalein, kyunki yeh search results mein dikhti hain.</li>
-                        <li><strong>Detailed Summary:</strong> Kam se kam 200-300 shabdon ka summary likhein. Apne main keyword aur usse milte-julte (secondary) keywords ka istemaal karein.</li>
-                        <li><strong>Links & Timestamps:</strong> Apne social media links aur video ke alag-alag sections ke liye timestamps daalein. Yeh user engagement badhata hai.</li>
-                    </ul>
-                    
-                    <h3>4. Tags Ka Sahi Istemal</h3>
-                    <p>Tags ab utne zaroori nahi hain jitne pehle they, lekin fir bhi inka fayda hai. Apne main keyword ko pehla tag banayein. Uske baad 5-10 related tags (long-tail aur short-tail) ka mixture daalein. Apne competitors ke tags dekhne ke liye VidIQ ka istemaal karein.</p>
-                </article>
-
-                <!-- Article 2 -->
-                <article class="mb-16">
-                    <img src="https://placehold.co/1200x600/10B981/FFFFFF?text=Music+Marketing+101" alt="Blog Post" class="w-full rounded-lg mb-6">
-                    <h2 class="text-3xl font-bold text-heading mb-4">Music Marketing 101: Spotify Aur Instagram Par Apne Gaane Ko Promote Kaise Karein</h2>
-                    <p>Aapne ek behtareen gaana bana liya. Use distribute bhi kar diya. Lekin ab use sunega kaun? Aaj ke "noise" bhare digital world mein, gaana banana sirf 50% kaam hai. Baaki 50% hai marketing. Agar aapka gaana suna hi nahi gaya, toh uska koi fayda nahi. Yahaan kuch strategies hain jo R.S Films Group apne artists ke liye istemaal karta hai.</p>
-
-                    <h3>1. Spotify for Artists (Aapka Sabse Bada Hathiyaar)</h3>
-                    <p>Distribution ke baad, sabse pehla kaam hai 'Spotify for Artists' par apni profile claim karna. Yahaan se aap:</p>
-                    <ul>
-                        <li><strong>Profile Update Karein:</strong> Apni photo, bio, aur social media links daalein.</li>
-                        <li><strong>Playlists Ko Pitch Karein:</strong> Yeh sabse zaroori hai. Apne release date se kam se kam 1-2 hafte pehle, aap apna gaana Spotify ke "Editorial Playlists" (jaise 'New Music Hindi') ko pitch kar sakte hain. Yeh free hai aur aapki life badal sakta hai.</li>
-                        <li><strong>Analytics Dekhein:</strong> Pata lagayein ki aapke listeners kahaan se hain, unki umar kya hai, aur woh aapke gaane ko kin playlists se sun rahe hain.</li>
-                    </ul>
-
-                    <h3>2. Instagram Reels Ka Jaadu</h3>
-                    <p>TikTok/Reels ne music industry ko poori tarah badal diya hai. Aapka gaana "viral" ho sakta hai agar log use apni videos mein istemaal karein.</p>
-                    <p>Gaana release hone se pehle, uska ek "hook" (sabse catchy 15 second ka part) taiyaar karein. Ek "trend" shuru karne ki koshish karein. Dusre chote-bade creators ko apna gaana istemaal karne ke liye request karein (barter ya paid collaboration).</p>
-
-                    <h3>3. Influencer Marketing & Playlist Pitching</h3>
-                    <p>Editorial playlists ke alawa, hazaron independent "user playlists" hain jinke laakhon followers hain. Unke curators (jo playlists banate hain) ko Instagram ya email par dhoondein aur apna gaana humbly submit karein. Iske alawa, YouTube channels (jo aapke genre ka music promote karte hain) aur Instagram music pages ko apna gaana bhejein.</p>
-                </article>
-                
-                <!-- Article 3 -->
-                <article class="mb-16">
-                    <img src="https://placehold.co/1200x600/F59E0B/FFFFFF?text=Color+Grading+Basics" alt="Blog Post" class="w-full rounded-lg mb-6">
-                    <h2 class="text-3xl font-bold text-heading mb-4">Cinematic Color Grading: Apne Videos Ko "Film Look" Kaise Dein</h2>
-                    <p>Aapne dekha hoga ki movies ka look aapke phone ke video se alag kyun lagta hai? Jawaab hai "Color Grading". Yeh sirf filter lagana nahi hai; yeh ek art hai jisse aap apne video ka poora mood aur feel badal sakte hain. Ek achha color grade aapke "video" ko "film" bana sakta hai.</p>
-                    
-                    <h3>Color Correction vs. Color Grading</h3>
-                    <p>Yeh do alag cheezein hain. Pehle "Correction" hota hai, fir "Grading".</p>
-                    <ul>
-                        <li><strong>Color Correction (Sudhaar):</strong> Is process mein aap video ki problems a(jaise exposure, white balance) ko theek karte hain. Aapka goal hota hai ki video "natural" dikhe, jaisa woh aankhon se dikh raha tha.</li>
-                        <li><strong>Color Grading (Look):</strong> Yeh creative process hai. Yahaan aap video ko ek specific "look" ya "mood" dete hain. Jaise, 'The Matrix' ka green tint, ya 'Mad Max' ka orange/teal look.</li>
-                    </ul>
-                    
-                    <h3>LUTs Kya Hain? (Aur Unhe Kab Istemal Karein)</h3>
-                    <p>LUT (Look-Up Table) ek file hai jismein color information save hoti hai. Yeh ek "preset" ki tarah hai. Aap ise apne footage par apply karke turant ek cinematic look paa sakte hain. Lekin, LUTs jaadu nahi hain.</p>
-                    <p>Best results ke liye, pehle apne footage ko "Color Correct" karein (exposure/white balance theek karein) aur *uske baad* hi LUT apply karein. Agar aap flat/LOG footage (jaise Sony S-Log3) par shoot karte hain, toh pehle aapko ek "Conversion LUT" (Technical LUT) lagana hoga, aur uske baad ek "Creative LUT" (jaise humare store mein milte hain) lagana hoga.</p>
-                </article>
-                
-                <!-- Article 4 -->
-                <article class="mb-16">
-                    <img src="https://placehold.co/1200x600/EF4444/FFFFFF?text=Building+a+Brand" alt="Blog Post" class="w-full rounded-lg mb-6">
-                    <h2 class="text-3xl font-bold text-heading mb-4">Aap Sirf Ek Creator Nahi Hain, Aap Ek Brand Hain</h2>
-                    <p>YouTube par roz laakhon log video daalte hain. Aap unse alag kaise hain? Sirf achha content kaafi nahi hai. Aapko ek "Brand" banana hoga. Brand ka matlab hai consistency (ek jaisa dikhna aur bolna) taaki log aapko turant pehchaan lein.</p>
-                    <p>Sochiye 'Apple' ke baare mein. Aapko turant "clean design," "premium," aur "simple" jaise shabd yaad aate hain. Yahi brand identity hai. Aapki brand identity kya hai? Aap "funny" hain? "Informative" hain? "Cinematic" hain? "Energetic" hain?</p>
-                    <p>Apni brand identity ko har jagah istemaal karein: Aapke thumbnails ka style, aapke video ka intro music, aapke bolne ka tareeka, aapke posters ka font. Jab sab kuch ek jaisa lagega, toh log aap par "trust" karne lagenge. Aur trust hi ek audience ko "community" mein badalta hai.</p>
-                </article>
-            </div>
-        </section>
-
-        <!-- ===== Page: Community (Forum) (Massive Content) ===== -->
-        <section id="page-community" class="page-section">
-            <h1 class="page-header text-center">Creator's Community Forum</h1>
-            <p class="text-center text-base text-main max-w-2xl mx-auto mb-10">
-                Dusre creators se judein. Sawaal poochein, feedback dein, aur collaborate karein.
-            </p>
-
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <!-- Categories -->
-                <div class="md:col-span-1">
-                    <div class="bg-card border border-card rounded-lg p-4 sticky top-24">
-                        <h3 class="text-lg font-semibold text-heading mb-4">Topics</h3>
-                        <ul class="space-y-2">
-                            <li><a href="#" class_disabled="flex items-center p-2 rounded-md bg-primary-light text-primary font-semibold"><ion-icon name="chatbox-ellipses-outline" class="mr-2"></ion-icon> Editing Help</a></li>
-                            <li><a href="#" class_disabled="flex items-center p-2 rounded-md hover:bg-app"><ion-icon name="musical-notes-outline" class="mr-2"></ion-icon> Music Feedback</a></li>
-                            <li><a href="#" class_disabled="flex items-center p-2 rounded-md hover:bg-app"><ion-icon name="trending-up-outline" class="mr-2"></ion-icon> YouTube Growth</a></li>
-                            <li><a href="#" class_disabled="flex items-center p-2 rounded-md hover:bg-app"><ion-icon name="people-outline" class="mr-2"></ion-icon> Collaborations</a></li>
-                            <li><a href="#" class_disabled="flex items-center p-2 rounded-md hover:bg-app"><ion-icon name="bug-outline" class="mr-2"></ion-icon> General Chit-Chat</a></li>
-                        </ul>
-                    </div>
-                </div>
-
-                <!-- Forum Posts -->
-                <div class="md:col-span-3 space-y-4">
-                    <div class="text-right mb-4">
-                        <button class="btn btn-primary">Naya Post Shuru Karein</button>
-                    </div>
-
-                    <!-- Post 1 -->
-                    <div class="bg-card border border-card rounded-lg transition-all hover:border-primary">
-                        <div class="p-4">
-                            <h3 class="text-lg font-semibold text-heading mb-2">Premiere Pro mein Audio Sync kaise karein? (Help)</h3>
-                            <p class="text-sm text-main mb-3">Posted by <span class="font-semibold text-primary">@rohan_editor</span> in <span class="font-semibold">Editing Help</span></p>
-                            <p class="text-main">Mere paas 2 camera footage hain aur ek external audio recorder hai. Unhe manually sync karne mein bahut time lag raha hai. Kya koi automatic tareeka hai?</p>
-                        </div>
-                        <div class="border-t border-card bg-app px-4 py-3 flex justify-between items-center text-sm">
-                            <span class="font-medium">4 Replies</span>
-                            <span class="text-main">Last reply 10 min ago by @vikram</span>
-                        </div>
-                    </div>
-                    <!-- Post 2 -->
-                    <div class="bg-card border border-card rounded-lg transition-all hover:border-primary">
-                        <div class="p-4">
-                            <h3 class="text-lg font-semibold text-heading mb-2">[Feedback] Maine ek naya Lo-Fi track banaya hai.</h3>
-                            <p class="text-sm text-main mb-3">Posted by <span class="font-semibold text-primary">@music_priya</span> in <span class="font-semibold">Music Feedback</span></p>
-                            <p class="text-main">Hey guys, main 2 saal se music bana rahi hoon. Yeh mera naya track hai. Please sun kar batayein ki mixing kaisi hai. Link: [link-to-song]</p>
-                        </div>
-                        <div class="border-t border-card bg-app px-4 py-3 flex justify-between items-center text-sm">
-                            <span class="font-medium">12 Replies</span>
-                            <span class="text-main">Last reply 25 min ago by @audio_sumit</span>
-                        </div>
-                    </div>
-                    <!-- Post 3 -->
-                    <div class="bg-card border border-card rounded-lg transition-all hover:border-primary">
-                        <div class="p-4">
-                            <h3 class="text-lg font-semibold text-heading mb-2">Mere views 100-200 par stuck ho gaye hain.</h3>
-                            <p class="text-sm text-main mb-3">Posted by <span class="font-semibold text-primary">@vlogger_aman</span> in <span class="font-semibold">YouTube Growth</span></p>
-                            <p class="text-main">Main roz videos daal raha hoon, achhe thumbnails bhi bana raha hoon, lekin views nahi aa rahe. CTR achha hai par watch time kam hai. Kya karoon?</p>
-                        </div>
-                        <div class="border-t border-card bg-app px-4 py-3 flex justify-between items-center text-sm">
-                            <span class="font-medium">8 Replies</span>
-                            <span class="text-main">Last reply 1 hour ago by @raj_seo</span>
-                        </div>
-                    </div>
-                    <!-- Post 4 -->
-                    <div class="bg-card border border-card rounded-lg transition-all hover:border-primary">
-                        <div class="p-4">
-                            <h3 class="text-lg font-semibold text-heading mb-2">Collaboration: Delhi/NCR mein koi Video Shooter chahiye</h3>
-                            <p class="text-sm text-main mb-3">Posted by <span class="font-semibold text-primary">@rapper_dino</span> in <span class="font-semibold">Collaborations</span></p>
-                            <p class="text-main">Mujhe agle hafte ek music video shoot karna hai. Low budget hai lekin concept tagda hai. Koi available hai jo Blackmagic ya Sony Alpha use karta ho?</p>
-                        </div>
-                        <div class="border-t border-card bg-app px-4 py-3 flex justify-between items-center text-sm">
-                            <span class="font-medium">2 Replies</span>
-                            <span class="text-main">Last reply 2 hour ago by @aisha_shoots</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- ===== Page: FAQ (Massive Content) ===== -->
-        <section id="page-faq" class="page-section">
-            <h1 class="page-header text-center">Aksar Poochhe Jaane Waale Sawaal (FAQ)</h1>
-            <div class="max-w-4xl mx-auto space-y-6">
-                <!-- FAQ Section 1 -->
-                <div>
-                    <h2 class="text-xl font-semibold text-heading mb-4">Music Distribution</h2>
-                    <div class="space-y-4">
-                        <div class="bg-card border border-card rounded-lg p-4">
-                            <h3 class="font-semibold text-heading">Q: Mera gaana live hone mein kitna time lagega?</h3>
-                            <p class="text-main text-sm mt-1">A: Review process (24-48 ghante) ke baad, stores par live hone mein 1-2 hafte lag sakte hain. Spotify aur Apple Music aam taur par tez hote hain.</p>
-                        </div>
-                        <div class="bg-card border border-card rounded-lg p-4">
-                            <h3 class="font-semibold text-heading">Q: Kya main apna gaana free mein distribute kar sakta hoon?</h3>
-                            <p class="text-main text-sm mt-1">A: Humare paas alag-alag plans hain. Kuch plans mein upfront fee hoti hai (100% royalty aapka), aur kuch free plans mein hum royalty ka ek chhota hissa rakhte hain.</p>
-                        </div>
-                        <div class="bg-card border border-card rounded-lg p-4">
-                            <h3 class="font-semibold text-heading">Q: Mujhe paise kab aur kaise milenge?</h3>
-                            <p class="text-main text-sm mt-1">A: Stores (jaise Spotify) humein 2-3 mahine baad report bhejte hain. Jaise hi aapke account mein $10 (ya equivalent) ho jaate hain, aap use apne bank account mein withdraw kar sakte hain.</p>
-                        </div>
-                        <div class="bg-card border border-card rounded-lg p-4">
-                            <h3 class="font-semibold text-heading">Q: Cover Art ke liye kya requirements hain?</h3>
-                            <p class="text-main text-sm mt-1">A: Aapka cover art high-quality (kam se kam 3000x3000 pixels), square (1:1), aur JPG/PNG format mein hona chahiye. Us par sirf artist ka naam aur gaane ka naam hona chahiye (koi social media handle nahi).</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- FAQ Section 2 -->
-                <div class="mt-8">
-                    <h2 class="text-xl font-semibold text-heading mb-4">MCN & Channel Management</h2>
-                    <div class="space-y-4">
-                        <div class="bg-card border border-card rounded-lg p-4">
-                            <h3 class="font-semibold text-heading">Q: MCN join karne ke baad mera revenue share kya hoga?</h3>
-                            <p class="text-main text-sm mt-1">A: Standard share 70/30 (70% aapka, 30% MCN ka) se shuru hota hai. Aapke channel ki growth aur size ke hisaab se yeh 90/10 tak ja sakta hai.</p>
-                        </div>
-                        <div class="bg-card border border-card rounded-lg p-4">
-                            <h3 class="font-semibold text-heading">Q: Kya MCN join karne se mere views badh jayenge?</h3>
-                            <p class="text-main text-sm mt-1">A: MCN join karna views ki guarantee nahi deta. Lekin, humari team aapko SEO, content strategy, aur collaboration mein help karegi, jisse aapke channel ko grow karne mein madad milegi.</p>
-                        </div>
-                         <div class="bg-card border border-card rounded-lg p-4">
-                            <h3 class="font-semibold text-heading">Q: Content ID (Copyright) kaise kaam karta hai?</h3>
-                            <p class="text-main text-sm mt-1">A: MCN join karne ke baad, hum aapke original content (music, videos) ko YouTube ke Content ID system mein daal dete hain. Agar koi aur aapka content use karta hai, toh us video par ya toh claim jaata hai (aur revenue aapko milta hai) ya woh block ho jaata hai.</p>
-                        </div>
-                        <div class="bg-card border border-card rounded-lg p-4">
-                            <h3 class="font-semibold text-heading">Q: Channel Management plan mein kya-kya included hai?</h3>
-                            <p class="text-main text-sm mt-1">A: Ismein video upload, SEO, metadata writing, thumbnail design, comment moderation, aur weekly analytics report shamil hai. (Yeh aapke plan par depend karta hai).</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- FAQ Section 3 -->
-                <div class="mt-8">
-                    <h2 class="text-xl font-semibold text-heading mb-4">Bazaar (Store & Hiring)</h2>
-                    <div class="space-y-4">
-                        <div class="bg-card border border-card rounded-lg p-4">
-                            <h3 class="font-semibold text-heading">Q: Store se khareede gaye assets (PSDs, LUTs) ka license kya hai?</h3>
-                            <p class="text-main text-sm mt-1">A: Sabhi assets 'Commercial License' ke saath aate hain. Aap unhe apne personal aur client projects (YouTube videos, music posters) mein istemaal kar sakte hain. Aap unhe dobaara bech (resell) nahi sakte.</p>
-                        </div>
-                        <div class="bg-card border border-card rounded-lg p-4">
-                            <h3 class="font-semibold text-heading">Q: Professional ko hire karne ka process kya hai?</h3>
-                            <p class="text-main text-sm mt-1">A: Aap 'Bazaar' page se professional ki profile dekh kar 'Hire' button par click karein. Aapko ek form bharna hoga jismein aap apne project ki details bataate hain. Humari team 24 ghante ke andar aapse connect karegi.</p>
-                        </div>
-                    </div>
-                </div>
-                <!-- 10+ more FAQs -->
-            </div>
-        </section>
-        
-        <!-- ===== Page: Contact Us ===== -->
-        <section id="page-contact" class="page-section">
-            <h1 class="page-header text-center">Contact Us</h1>
-            <p class="text-center text-base text-main max-w-2xl mx-auto mb-10">
-                Aapke paas koi sawaal hai? Humse sampark karein. Hum 24 ghante ke andar jawaab denge.
-            </p>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <!-- Form -->
-                <div class="md:col-span-2 bg-card border border-card rounded-lg shadow-lg p-6">
-                    <form id="contact-form" class="space-y-4">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label class="form-label" for="contact-name">Aapka Naam</label>
-                                <input class="form-input" type="text" name="contact-name" required>
-                            </div>
-                            <div>
-                                <label class="form-label" for="contact-email">Aapka Email</label>
-                                <input class="form-input" type="email" name="contact-email" required>
-                            </div>
+            </section>
+            
+            <!-- ===== Page: Music Distribution ===== -->
+            <section id="page-music" class="page-section">
+                <h1 class="text-3xl font-bold text-heading mb-6">Music Distribution</h1>
+                <div class="bg-card border border-main rounded-lg shadow-lg p-6">
+                    <h3 class="text-xl font-semibold text-heading mb-4">Multi-Step Music Distribution Form</h3>
+                    <!-- Multi-step form content yahaan add hoga -->
+                    <form id="music-dist-form" class="space-y-4">
+                        <div>
+                            <label class="form-label" for="artist-name">Artist Name</label>
+                            <input class="form-input" type="text" name="artist-name" required>
                         </div>
                         <div>
-                            <label class="form-label" for="contact-subject">Subject (Vishay)</label>
-                            <input class="form-input" type="text" name="contact-subject" required>
+                            <label class="form-label" for="song-title">Song Title</label>
+                            <input class="form-input" type="text" name="song-title" required>
                         </div>
-                        <div>
-                            <label class="form-label" for="contact-message">Aapka Message</label>
-                            <textarea class="form-input" name="contact-message" rows="6" required></textarea>
-                        </div>
-                        <div class="text-right">
-                            <button type="submit" class="btn btn-primary">Send Message</button>
+                        <div class="text-right pt-2">
+                            <button type="submit" class="btn btn-primary">Submit Song</button>
                         </div>
                     </form>
                 </div>
-                <!-- Contact Info -->
-                <div class="space-y-6">
-                    <div class="bg-card border border-card rounded-lg p-6">
-                        <ion-icon name="mail-outline" class="text-3xl text-primary mb-2"></ion-icon>
-                        <h3 class="text-lg font-semibold text-heading">Email</h3>
-                        <p class="text-main">support@rsfilmsgroup.com</p>
-                    </div>
-                    <div class="bg-card border border-card rounded-lg p-6">
-                        <ion-icon name="logo-whatsapp" class="text-3xl text-green-500 mb-2"></ion-icon>
-                        <h3 class="text-lg font-semibold text-heading">WhatsApp</h3>
-                        <p class="text-main">+91 12345 67890</p>
-                    </div>
-                    <div class="bg-card border border-card rounded-lg p-6">
-                        <ion-icon name="location-outline" class="text-3xl text-red-500 mb-2"></ion-icon>
-                        <h3 class="text-lg font-semibold text-heading">Address</h3>
-                        <p class="text-main">123, Creative Hub, Andheri West, Mumbai, Maharashtra</p>
-                    </div>
+            </section>
+
+            <!-- ===== Page: MCN Application ===== -->
+            <section id="page-mcn" class="page-section">
+                <h1 class="text-3xl font-bold text-heading mb-6">MCN Application</h1>
+                <div class="bg-card border border-main rounded-lg shadow-lg p-6">
+                    <h3 class="text-xl font-semibold text-heading mb-4">MCN Application Form</h3>
+                    <form id="mcn-apply-form" class="space-y-4">
+                        <div>
+                            <label class="form-label" for="channel-name">Channel Name</label>
+                            <input class="form-input" type="text" name="channel-name" required>
+                        </div>
+                        <div>
+                            <label class="form-label" for="channel-link">Channel Link (URL)</label>
+                            <input class="form-input" type="url" name="channel-link" required>
+                        </div>
+                        <div class="text-right pt-2">
+                            <button type="submit" class="btn btn-primary">Submit Application</button>
+                        </div>
+                    </form>
                 </div>
-            </div>
-            <!-- Google Map Embed -->
-            <div class="mt-12 bg-card border border-card rounded-lg shadow-lg overflow-hidden h-64">
-                <iframe
-                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15077.53037217983!2d72.82512130325368!3d19.13451648967597!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3be7b637d6e6f6a1%3A0x8804c865a7f71490!2sAndheri%20West%2C%20Mumbai%2C%20Maharashtra!5e0!3m2!1sen!2sin!4v1678888888888!5m2!1sen!2sin"
-                    width="100%"
-                    height="100%"
-                    style="border:0;"
-                    allowfullscreen=""
-                    loading="lazy"
-                    referrerpolicy="no-referrer-when-downgrade">
-                </iframe>
-            </div>
-        </section>
-
-        <!-- 
-          ===== Page: Home (Default) =====
-        -->
-        <section id="page-home" class="page-section">
-            <!-- Hero Section -->
-            <!-- 
-                VIDEO KI JAGAH NAYA ANIMATED GRADIENT BACKGROUND.
-                Yeh 100% load hoga aur professional "wavy" look dega.
-            -->
-            <div class="animated-hero-bg rounded-lg shadow-xl overflow-hidden h-[60vh] flex items-center justify-center text-center p-8">
-                
-                <!-- VIDEO TAG HATA DIYA GAYA HAI. Ab yeh fail nahi ho sakta. -->
-
-                <div classRead-only-File-Error: Is 'src' ko apne video URL se badalna hai.
-                    Aap pexels.com ya pixabay.com se free video use kar sakte hain.
-    -->
-    <source src="https://cdn.pixabay.com/video/2019/11/07/28931-372900780_large.mp4" type="video/mp4">
-    Aapka browser video tag ko support nahi karta.
-</video>
-<!-- ===== End Background Video ===== -->
-
-                <div class="relative z-10">
-                    <h1 class="text-4xl md:text-6xl font-bold text-white mb-4 [text-shadow:0_2px_4px_rgba(0,0,0,0.5)]">R.S Films Group</h1>
-                    <p class="text-xl md:text-2xl text-white font-semibold mb-8 [text-shadow:0_2px_4px_rgba(0,0,0,0.5)]">The Ultimate All-in-One Creator Platform</p>
-                    <a href="#page-services" class="btn btn-primary btn-lg">Humare Services Dekhein</a>
-                </div>
-            </div>
+            </section>
             
-            <!-- Services Summary -->
-            <div class="mt-16">
-                <h2 class="text-2xl font-bold text-heading text-center mb-10">Aapki Har Creative Zaroorat, Ek Jagah Par</h2>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="bg-card border border-card rounded-lg p-6 text-center">
-                        <ion-icon name="musical-notes-outline" class="text-4xl text-primary mb-3"></ion-icon>
-                        <h3 class="text-lg font-semibold text-heading mb-2">Music Distribution</h3>
-                        <p class="text-main text-sm">Apne gaano ko Spotify, Apple Music, aur sabhi platforms par failayein.</p>
+            <!-- ===== Page: Hire a Professional ===== -->
+            <section id="page-hire" class="page-section">
+                <h1 class="text-3xl font-bold text-heading mb-6">Hire a Professional</h1>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <!-- Professionals (10+ profiles) -->
+                    <div class="bg-card border border-main rounded-lg p-4 text-center">
+                        <img src="https://placehold.co/100x100/3B82F6/FFFFFF?text=Rohan" alt="Pro" class="w-20 h-20 rounded-full mx-auto mb-3">
+                        <h3 class="text-base font-semibold text-heading">Rohan Sharma</h3>
+                        <p class="text-primary font-medium text-xs mb-2">Pro Video Editor</p>
+                        <button class="btn btn-primary w-full text-sm py-2 px-3">Hire</button>
                     </div>
-                    <div class="bg-card border border-card rounded-lg p-6 text-center">
-                        <ion-icon name="tv-outline" class="text-4xl text-green-500 mb-3"></ion-icon>
-                        <h3 class="text-lg font-semibold text-heading mb-2">MCN & Channel Management</h3>
-                        <p class="text-main text-sm">Humare MCN se judein aur apne channel ko grow karein.</p>
-                    </div>
-                    <div class="bg-card border border-card rounded-lg p-6 text-center">
-                        <ion-icon name="storefront-outline" class="text-4xl text-yellow-500 mb-3"></ion-icon>
-                        <h3 class="text-lg font-semibold text-heading mb-2">Digital Store & Hiring</h3>
-                        <p class="text-main text-sm">PSD files khareedein ya professional editors ko hire karein.</p>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Meet The Team (Naya Section) -->
-            <div class="mt-16">
-                <h2 class="text-2xl font-bold text-heading text-center mb-10">Humari Expert Team Se Milein</h2>
-                <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
-                    <div class="bg-card text-center p-4 rounded-lg">
-                        <img src="https://placehold.co/100x100/3B82F6/FFFFFF?text=CEO" alt="Team" class="w-24 h-24 rounded-full mx-auto mb-3 border-4 border-card">
-                        <h3 class="text-base font-semibold text-heading">R. Sharma</h3>
-                        <p class="text-primary font-medium text-xs">CEO & Founder</p>
-                    </div>
-                    <div class="bg-card text-center p-4 rounded-lg">
-                        <img src="https://placehold.co/100x100/10B981/FFFFFF?text=Head" alt="Team" class="w-24 h-24 rounded-full mx-auto mb-3 border-4 border-card">
+                    <div class="bg-card border border-main rounded-lg p-4 text-center">
+                        <img src="https://placehold.co/100x100/10B981/FFFFFF?text=Priya" alt="Pro" class="w-20 h-20 rounded-full mx-auto mb-3">
                         <h3 class="text-base font-semibold text-heading">Priya Singh</h3>
-                        <p class="text-primary font-medium text-xs">Head of Music</p>
+                        <p class="text-primary font-medium text-xs mb-2">Graphic Designer</p>
+                        <button class="btn btn-primary w-full text-sm py-2 px-3">Hire</button>
                     </div>
-                    <div class="bg-card text-center p-4 rounded-lg">
-                        <img src="https://placehold.co/100x100/EF4444/FFFFFF?text=Lead" alt="Team" class="w-24 h-24 rounded-full mx-auto mb-3 border-4 border-card">
-                        <h3 class="text-base font-semibold text-heading">Vikram Kumar</h3>
-                        <p class="text-primary font-medium text-xs">Lead Channel Manager</p>
-                    </div>
-                    <div class="bg-card text-center p-4 rounded-lg">
-                        <img src="https://placehold.co/100x100/8B5CF6/FFFFFF?text=Head" alt="Team" class="w-24 h-24 rounded-full mx-auto mb-3 border-4 border-card">
-                        <h3 class="text-base font-semibold text-heading">Aisha Khan</h3>
-                        <p class="text-primary font-medium text-xs">Head of Production</p>
-                    </div>
-                    <div class="bg-card text-center p-4 rounded-lg">
-                        <img src="https://placehold.co/100x100/F59E0B/FFFFFF?text=Lead" alt="Team" class="w-24 h-24 rounded-full mx-auto mb-3 border-4 border-card">
-                        <h3 class="text-base font-semibold text-heading">Sumit Verma</h3>
-                        <p class="text-primary font-medium text-xs">Lead Audio Engineer</p>
-                    </div>
-                    <div class="bg-card text-center p-4 rounded-lg">
-                        <img src="https://placehold.co/100x100/EC4899/FFFFFF?text=Lead" alt="Team" class="w-24 h-24 rounded-full mx-auto mb-3 border-4 border-card">
-                        <h3 class="text-base font-semibold text-heading">Neha Gupta</h3>
-                        <p class="text-primary font-medium text-xs">Lead Designer</p>
-                    </div>
+                    <!-- ... aur profiles ... -->
                 </div>
-            </div>
-        </section>
-    
-    </main>
-    
-    <!-- ===== Mega-Footer (Massive Content) ===== -->
-    <footer class="border-t border-card mt-16 bg-card">
-        <div class="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-8">
-                <!-- Column 1: Company -->
-                <div class="col-span-2 md:col-span-4 lg:col-span-2">
-                    <h3 class="text-xl font-bold text-heading mb-2">R.S Films <span class="text-primary">Group</span></h3>
-                    <p class="text-main text-sm max-w-xs mb-4">India ki leading all-in-one platform jo creators, musicians, aur brands ko unki full potential tak pahunchne mein madad karti hai.</p>
-                    <div class="flex space-x-4">
-                        <a href="#" class="text-main hover:text-primary"><ion-icon name="logo-youtube" class="text-xl"></ion-icon></a>
-                        <a href="#" classa="text-main hover:text-primary"><ion-icon name="logo-instagram" class="text-xl"></ion-icon></a>
-                        <a href="#" class="text-main hover:text-primary"><ion-icon name="logo-facebook" class="text-xl"></ion-icon></a>
-                        <a href="#" class="text-main hover:text-primary"><ion-icon name="logo-twitter" class="text-xl"></ion-icon></a>
-                    </div>
-                </div>
-                
-                <!-- Column 2: Services -->
-                <div>
-                    <h4 class="text-sm font-semibold text-heading uppercase tracking-wider mb-3">Services</h4>
-                    <ul class="space-y-2 text-sm">
-                        <li><a href="#page-services" class="text-main hover:text-primary">Channel Management</a></li>
-                        <li><a href="#page-services" class_disabled="text-main hover:text-primary">Video Editing</a></li>
-                        <li><a href="#page-services" class="text-main hover:text-primary">Video Shooting</a></li>
-                        <li><a href="#page-services" class="text-main hover:text-primary">Graphic Designing</a></li>
-                        <li><a href="#page-mcn" class="text-main hover:text-primary">MCN</a></li>
-                    </ul>
-                </div>
-                
-                <!-- Column 3: Music -->
-                <div>
-                    <h4 class="text-sm font-semibold text-heading uppercase tracking-wider mb-3">Music</h4>
-                    <ul class="space-y-2 text-sm">
-                        <li><a href="#page-music" class="text-main hover:text-primary">Music Distribution</a></li>
-                        <li><a href="#page-music" class="text-main hover:text-primary">Submit Your Song</a></li>
-                        <li><a href="#page-music" class="text-main hover:text-primary">Platform List</a></li>
-                        <li><a href="#page-music" class="text-main hover:text-primary">Royalty Collection</a></li>
-                    </ul>
-                </div>
-                
-                <!-- Column 4: Bazaar -->
-                <div>
-                    <h4 class="text-sm font-semibold text-heading uppercase tracking-wider mb-3">Bazaar</h4>
-                    <ul class="space-y-2 text-sm">
-                        <li><a href="#page-bazaar" class="text-main hover:text-primary">Digital Store</a></li>
-                        <li><a href="#page-bazaar" class="text-main hover:text-primary">Hire a Professional</a></li>
-                        <li><a href="#page-bazaar" class="text-main hover:text-primary">Sell Your Assets</a></li>
-                        <li><a href="#page-bazaar" class="text-main hover:text-primary">LUTs & Presets</a></li>
-                    </ul>
-                </div>
-                
-                <!-- Column 5: Community -->
-                <div>
-                    <h4 class="text-sm font-semibold text-heading uppercase tracking-wider mb-3">Company</h4>
-                    <ul class="space-y-2 text-sm">
-                        <li><a href="#page-blog" class="text-main hover:text-primary">Blog / Gyaan</a></li>
-                        <li><a href="#page-community" class="text-main hover:text-primary">Community Forum</a></li>
-                        <li><a href="#page-faq" class="text-main hover:text-primary">FAQ</a></li>
-                        <li><a href="#page-contact" class="text-main hover:text-primary">Contact Us</a></li>
-                        <li><a href="#page-home" class="text-main hover:text-primary">Meet The Team</a></li>
-                    </ul>
-                </div>
-            </div>
+            </section>
             
-            <!-- Bottom Bar -->
-            <div class="border-t border-card mt-8 pt-6 text-center">
-                <p class="text-main text-sm">&copy; 2024 R.S Films Group. Sabhi adhikaar surakshit hain.</p>
+            <!-- ===== Page: Digital Store ===== -->
+            <section id="page-store" class="page-section">
+                <h1 class="text-3xl font-bold text-heading mb-6">Digital Store (PSD Selling)</h1>
+                <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                    <!-- Products (12+ items) -->
+                    <div class="bg-card border border-main rounded-lg overflow-hidden">
+                        <img src="https://placehold.co/600x400/3B82F6/FFFFFF?text=Poster+PSD" alt="Product" class="w-full h-32 object-cover">
+                        <div class="p-3">
+                            <h3 class="text-sm font-semibold text-heading truncate">Music Poster PSD Vol. 1</h3>
+                            <div class="flex justify-between items-center mt-2">
+                                <p class="text-lg font-bold text-primary">$10</p>
+                                <button class="btn btn-secondary text-xs py-1 px-2">Buy</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-card border border-main rounded-lg overflow-hidden">
+                        <img src="https://placehold.co/600x400/F59E0B/FFFFFF?text=Cinematic+LUTs" alt="Product" class="w-full h-32 object-cover">
+                        <div class="p-3">
+                            <h3 class="text-sm font-semibold text-heading truncate">Cinematic LUT Pack</h3>
+                            <div class="flex justify-between items-center mt-2">
+                                <p class="text-lg font-bold text-primary">$25</p>
+                                <button class="btn btn-secondary text-xs py-1 px-2">Buy</button>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- ... aur products ... -->
+                </div>
+            </section>
+
+            <!-- ===== Page: Latest Work ===== -->
+            <section id="page-work" class="page-section">
+                <h1 class="text-3xl font-bold text-heading mb-6">Latest Work (Portfolio)</h1>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <img src="https://placehold.co/600x400/8B5CF6/FFFFFF?text=Music+Video" alt="Work" class="rounded-lg shadow-lg">
+                    <img src="https://placehold.co/600x400/EC4899/FFFFFF?text=Poster+Design" alt="Work" class="rounded-lg shadow-lg">
+                    <img src="https://placehold.co/600x400/10B981/FFFFFF?text=Vlog+Edit" alt="Work" class="rounded-lg shadow-lg">
+                </div>
+            </section>
+            
+            <!-- ===== Page: Humare Clients ===== -->
+            <section id="page-clients" class="page-section">
+                <h1 class="text-3xl font-bold text-heading mb-6">Humare Clients</h1>
+                <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                    <div class="bg-card border border-main rounded-lg p-4 flex items-center justify-center">
+                        <img src="https://placehold.co/150x50/CBD5E1/0F172A?text=Client+Logo+1" alt="Client" class="h-8">
+                    </div>
+                    <div class="bg-card border border-main rounded-lg p-4 flex items-center justify-center">
+                        <img src="https://placehold.co/150x50/CBD5E1/0F172A?text=Client+Logo+2" alt="Client" class="h-8">
+                    </div>
+                    <!-- ... aur logos ... -->
+                </div>
+            </section>
+
+            <!-- ===== Page: Client Data ===== -->
+            <section id="page-data" class="page-section">
+                <h1 class="text-3xl font-bold text-heading mb-6">Client Data (Admin)</h1>
+                <div class="bg-card border border-main rounded-lg shadow-lg overflow-x-auto">
+                    <table class="w-full min-w-[600px]">
+                        <thead>
+                            <tr class="border-b border-main">
+                                <th class="p-3 text-left text-xs font-semibold text-main uppercase">Client Name</th>
+                                <th class="p-3 text-left text-xs font-semibold text-main uppercase">Email</th>
+                                <th class="p-3 text-left text-xs font-semibold text-main uppercase">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="client-data-table">
+                            <!-- Data JS se load hoga -->
+                            <tr><td colspan="3" class="p-4 text-center text-main">Loading client data...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+        </main>
+    </div>
+    
+    <!-- ===== Login Page (Full Screen) ===== -->
+    <!-- Yeh by default dikhega, login ke baad hide hoga -->
+    <div id="login-page">
+        <div class="w-full max-w-md mx-auto">
+            <div class="bg-card border border-main rounded-lg shadow-2xl p-8">
+                <h1 class="text-2xl font-bold text-heading text-center mb-6">R.S Films <span class="text-primary">Group</span></h1>
+                
+                <!-- Tabs -->
+                <div class="flex border-b border-main mb-6">
+                    <button id="login-tab-btn" class="w-1/2 py-3 font-semibold text-primary border-b-2 border-primary">Login</button>
+                    <button id="signup-tab-btn" class="w-1/2 py-3 font-semibold text-main">Sign Up</button>
+                </div>
+                
+                <!-- Login Form -->
+                <form id="auth-login-form" class="space-y-4">
+                    <div>
+                        <label class="form-label" for="login-email">Email</label>
+                        <input class="form-input" type="email" id="login-email" required>
+                    </div>
+                    <div>
+                        <label class="form-label" for="login-password">Password</label>
+                        <input class="form-input" type="password" id="login-password" required>
+                    </div>
+                    <p id="login-error" class="text-red-500 text-sm hidden"></p>
+                    <div class="pt-2">
+                        <button type="submit" class="btn btn-primary w-full">Login</button>
+                    </div>
+                </form>
+                
+                <!-- Signup Form -->
+                <form id="auth-signup-form" class="space-y-4 hidden">
+                    <div>
+                        <label class="form-label" for="signup-name">Aapka Naam</label>
+                        <input class="form-input" type="text" id="signup-name" required>
+                    </div>
+                    <div>
+                        <label class="form-label" for="signup-email">Email</label>
+                        <input class="form-input" type="email" id="signup-email" required>
+                    </div>
+                    <div>
+                        <label class="form-label" for="signup-password">Password</label>
+                        <input class="form-input" type="password" id="signup-password" required>
+                    </div>
+                    <p id="signup-error" class="text-red-500 text-sm hidden"></p>
+                    <div class="pt-2">
+                        <button type="submit" class="btn btn-primary w-full">Create Account</button>
+                    </div>
+                </form>
+                
             </div>
         </div>
-    </footer>
+    </div>
+    
+    <!-- Message Box (Alert/Error) -->
+    <div id="message-box" class="hidden fixed top-5 right-5 z-50 bg-red-500 text-white p-4 rounded-lg shadow-lg">
+        <span id="message-text"></span>
+    </div>
 
+    <!-- Firebase (Peeche add kar diya hai) -->
+    <script type="module">
+        // Firebase SDKs
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { 
+            getAuth, 
+            signInWithEmailAndPassword, 
+            createUserWithEmailAndPassword, 
+            onAuthStateChanged, 
+            signOut 
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { 
+            getFirestore, 
+            collection, 
+            addDoc, 
+            query, 
+            onSnapshot, 
+            serverTimestamp,
+            getDocs
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global variables
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        const authToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        let app, auth, db, charts = {};
+
+        // ===== Utility Functions =====
+        function showMessage(text, isError = true) {
+            const msgBox = document.getElementById('message-box');
+            const msgText = document.getElementById('message-text');
+            if (!msgBox || !msgText) return;
+            
+            msgText.textContent = text;
+            msgBox.className = `fixed top-5 right-5 z-50 p-4 rounded-lg shadow-lg ${isError ? 'bg-red-500 text-white' : 'bg-green-500 text-white'}`;
+            msgBox.classList.remove('hidden');
+            setTimeout(() => { msgBox.classList.add('hidden'); }, 3000);
+        }
+
+        // ===== Page Navigation (NAYA FIX) =====
+        function showPage(pageId) {
+            // Sabhi pages ko hide karo
+            document.querySelectorAll('.page-section').forEach(page => {
+                page.classList.remove('page-active');
+            });
+            // Sirf target page ko show karo
+            const activePage = document.getElementById(pageId);
+            if (activePage) {
+                activePage.classList.add('page-active');
+            }
+            
+            // Sidebar links ko update karo
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.toggle('active', link.dataset.page === pageId);
+            });
+
+            // Page load hone par specific actions
+            if (pageId === 'page-dashboard') {
+                initDashboardCharts();
+            }
+            if (pageId === 'page-data') {
+                loadClientData();
+            }
+            
+            // Mobile menu band karein
+            const mobileMenu = document.getElementById('sidebar-menu');
+            if (mobileMenu) mobileMenu.classList.add('-translate-x-full');
+        }
+
+        // ===== Theme Toggle =====
+        function updateThemeIcon(isDark) {
+            const iconName = isDark ? 'sunny-outline' : 'moon-outline';
+            document.getElementById('theme-toggle').innerHTML = `<ion-icon name="${iconName}" class="mr-2 text-lg"></ion-icon> ${isDark ? 'Light Mode' : 'Dark Mode'}`;
+            document.getElementById('theme-toggle-mobile').innerHTML = `<ion-icon name="${iconName}" class="text-xl"></ion-icon>`;
+        }
+        function toggleTheme() {
+            document.documentElement.classList.toggle('dark');
+            const isDark = document.documentElement.classList.contains('dark');
+            updateThemeIcon(isDark);
+        }
+        
+        // ===== Authentication =====
+        function showPlatform(isLoggedIn) {
+            const loginPage = document.getElementById('login-page');
+            const platformLayout = document.getElementById('platform-layout');
+            if (isLoggedIn) {
+                loginPage.style.display = 'none';
+                platformLayout.classList.remove('hidden');
+                showPage('page-dashboard'); // Login ke baad default dashboard dikhao
+            } else {
+                loginPage.style.display = 'flex';
+                platformLayout.classList.add('hidden');
+            }
+        }
+
+        // ===== Dashboard Charts =====
+        function initDashboardCharts() {
+            if (charts.revenue) charts.revenue.destroy();
+            if (charts.subscribers) charts.subscribers.destroy();
+            
+            const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+            charts.revenue = new Chart(revenueCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                    datasets: [{
+                        label: 'Revenue',
+                        data: [12000, 19000, 15000, 21000, 18000, 23000],
+                        borderColor: 'var(--color-primary)',
+                        tension: 0.1
+                    }]
+                }
+            });
+
+            const subscriberCtx = document.getElementById('subscriberChart').getContext('2d');
+            charts.subscribers = new Chart(subscriberCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                    datasets: [{
+                        label: 'New Subscribers',
+                        data: [150, 220, 180, 250, 230, 300],
+                        backgroundColor: 'var(--color-primary-light)',
+                        borderColor: 'var(--color-primary)',
+                        borderWidth: 1
+                    }]
+                }
+            });
+        }
+        
+        // ===== Client Data (Mock) =====
+        async function loadClientData() {
+            const tableBody = document.getElementById('client-data-table');
+            tableBody.innerHTML = ''; // Clear
+            
+            // Mock data
+            const clients = [
+                { name: 'Rohan Sharma', email: 'rohan@example.com', status: 'Active' },
+                { name: 'Priya Singh', email: 'priya@example.com', status: 'Active' },
+                { name: 'Vikram Kumar', email: 'vikram@example.com', status: 'Pending' },
+            ];
+            
+            clients.forEach(client => {
+                const row = `
+                    <tr class="border-b border-main">
+                        <td class="p-3 text-sm font-medium text-heading">${client.name}</td>
+                        <td class="p-3 text-sm text-main">${client.email}</td>
+                        <td class="p-3 text-sm">
+                            <span class="px-2 py-1 text-xs rounded-full ${client.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">
+                                ${client.status}
+                            </span>
+                        </td>
+                    </tr>
+                `;
+                tableBody.insertAdjacentHTML('beforeend', row);
+            });
+        }
+        
+        // ===== Chat =====
+        function initChat() {
+            const chatForm = document.getElementById('chat-form');
+            const chatInput = document.getElementById('chat-input');
+            const chatMessages = document.getElementById('chat-messages');
+
+            // Listen for new messages
+            const q = query(collection(db, `artifacts/${appId}/public/data/chat`));
+            onSnapshot(q, (snapshot) => {
+                chatMessages.innerHTML = '';
+                snapshot.forEach((doc) => {
+                    const msg = doc.data();
+                    const isMe = msg.userId === auth.currentUser.uid;
+                    const msgClass = isMe ? 'bg-primary text-white ml-auto' : 'bg-app border border-main';
+                    chatMessages.innerHTML += `
+                        <div class="max-w-xs p-3 rounded-lg ${msgClass}">
+                            <p class="text-xs font-semibold ${isMe ? 'text-blue-200' : 'text-primary'}">${msg.name}</p>
+                            <p class="text-sm">${msg.text}</p>
+                        </div>
+                    `;
+                });
+                chatMessages.scrollTop = chatMessages.scrollHeight; // Scroll to bottom
+            });
+
+            // Send new message
+            chatForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const text = chatInput.value;
+                if (!text.trim()) return;
+
+                try {
+                    await addDoc(collection(db, `artifacts/${appId}/public/data/chat`), {
+                        text: text,
+                        name: auth.currentUser.displayName || auth.currentUser.email.split('@')[0],
+                        userId: auth.currentUser.uid,
+                        createdAt: serverTimestamp()
+                    });
+                    chatInput.value = '';
+                } catch (error) {
+                    showMessage("Error sending message: " + error.message);
+                }
+            });
+        }
+
+
+        // ===== Main Initialization =====
+        document.addEventListener('DOMContentLoaded', () => {
+            try {
+                // Initialize Firebase
+                app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+            } catch (error) {
+                showMessage("Firebase initialization failed. Please check config.");
+                return;
+            }
+
+            // --- Authentication Logic ---
+            const loginForm = document.getElementById('auth-login-form');
+            const signupForm = document.getElementById('auth-signup-form');
+            
+            loginForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                try {
+                    await signInWithEmailAndPassword(auth, loginForm['login-email'].value, loginForm['login-password'].value);
+                    // Auth state change handle karega
+                } catch (error) {
+                    showMessage(error.message);
+                }
+            });
+            
+            signupForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                try {
+                    await createUserWithEmailAndPassword(auth, signupForm['signup-email'].value, signupForm['signup-password'].value);
+                    // Auth state change handle karega
+                } catch (error) {
+                    showMessage(error.message);
+                }
+            });
+
+            document.getElementById('auth-logout-sidebar').addEventListener('click', () => signOut(auth));
+
+            // Auth State Watcher
+            onAuthStateChanged(auth, (user) => {
+                showPlatform(!!user);
+                if (user) {
+                    initChat(); // Sirf login ke baad chat init karo
+                }
+            });
+
+            // --- UI Listeners ---
+            
+            // Login/Signup Tabs
+            const loginTab = document.getElementById('login-tab-btn');
+            const signupTab = document.getElementById('signup-tab-btn');
+            loginTab.addEventListener('click', () => {
+                loginForm.classList.remove('hidden');
+                signupForm.classList.add('hidden');
+                loginTab.classList.add('text-primary', 'border-primary');
+                signupTab.classList.remove('text-primary', 'border-primary');
+            });
+            signupTab.addEventListener('click', () => {
+                loginForm.classList.add('hidden');
+                signupForm.classList.remove('hidden');
+                signupTab.classList.add('text-primary', 'border-primary');
+                loginTab.classList.remove('text-primary', 'border-primary');
+            });
+            
+            // Theme Toggle
+            document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
+            document.getElementById('theme-toggle-mobile').addEventListener('click', toggleTheme);
+            updateThemeIcon(document.documentElement.classList.contains('dark')); // Initial check
+            
+            // Page Navigation
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    showPage(link.dataset.page);
+                });
+            });
+
+            // Mobile Menu Toggle
+            document.getElementById('mobile-menu-btn').addEventListener('click', () => {
+                document.getElementById('sidebar-menu').classList.toggle('-translate-x-full');
+            });
+        });
+
+    </script>
 </body>
 </html>
 
