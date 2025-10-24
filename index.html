@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <!-- 
-  NAYA: Background video ko user ke naye video (NdXstDDOz9Y) se badal diya gaya hai.
-  FIX: White screen ki problem solved hai. Website seedhe Home Page par khulti hai.
+  NAYA: YouTube video ko hata diya gaya hai.
+  NAYA: Ek naya "Coding / Matrix" style animated background (CSS/JS) add kiya gaya hai.
+  FIX: Refresh problem 100% solved.
   Theme: Default Light Mode
-  FEATURE: AI features aur Profile UI abhi bhi maujood hain.
 -->
 <html lang="hi">
 <head>
@@ -33,6 +33,12 @@
             --color-primary: #3B82F6;
             --color-primary-hover: #2563EB;
             --color-primary-light: rgba(59, 130, 246, 0.1);
+            
+            /* NAYA: Coding background colors */
+            --color-matrix-bg-light: rgba(241, 245, 249, 0.9);
+            --color-matrix-text-light: #BFDBFE; /* Light Blue */
+            --color-matrix-bg-dark: rgba(11, 17, 32, 0.95);
+            --color-matrix-text-dark: #34D399; /* Green */
         }
 
         /* --- Global Styles --- */
@@ -43,49 +49,27 @@
             -moz-osx-font-smoothing: grayscale;
         }
 
-        /* --- NAYA: YouTube Background Styles --- */
-        #youtube-bg {
+        /* --- NAYA: Coding Background Styles --- */
+        #coding-bg {
             position: fixed;
             top: 0;
             left: 0;
             width: 100vw;
             height: 100vh;
-            overflow: hidden;
             z-index: -10;
-        }
-        #youtube-bg::after { /* Text readability ke liye overlay */
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background-color: rgba(255, 255, 255, 0.3); /* Light mode overlay */
-            z-index: -9;
-        }
-        .dark #youtube-bg::after {
-            background-color: rgba(0, 0, 0, 0.5); /* Dark mode overlay */
-        }
-        
-        #youtube-bg iframe {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 100vw;
-            height: 100vh;
-            /* Screen ko cover karne ke liye video ko bada karein */
-            min-width: 110vw; 
-            min-height: 120vh;
-            transform: translate(-50%, -50%);
-            pointer-events: none; /* Video par click hone se rokein */
+            pointer-events: none;
         }
 
 
         /* --- Light Mode (Default) --- */
         body {
-            background-color: transparent; /* Background dikhane ke liye */
+            background-color: var(--color-bg-light); 
             color: var(--color-text-light);
         }
         .bg-card { background-color: var(--color-card-light); }
         .bg-header { background-color: var(--color-card-light); }
         @supports (backdrop-filter: blur(10px)) {
+             /* Glassmorphism effect */
              .bg-card { background-color: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); }
              .bg-header { background-color: rgba(255, 255, 255, 0.85); backdrop-filter: blur(10px); }
         }
@@ -93,11 +77,11 @@
         .text-main { color: var(--color-text-light); }
         .text-heading { color: #0F172A; }
         .border-main { border-color: var(--color-border-light); }
-        .bg-app { background-color: transparent; } /* Background dikhane ke liye */
+        .bg-app { background-color: transparent; } 
 
         /* --- Dark Mode --- */
         .dark body {
-            background-color: transparent; /* Background dikhane ke liye */
+            background-color: var(--color-bg-dark); 
             color: var(--color-text-dark);
         }
         .dark .bg-card { background-color: var(--color-card-dark); }
@@ -110,7 +94,7 @@
         .dark .text-main { color: var(--color-text-dark); }
         .dark .text-heading { color: #F1F5F9; }
         .dark .border-main { border-color: var(--color-border-dark); }
-        .dark .bg-app { background-color: transparent; } /* Background dikhane ke liye */
+        .dark .bg-app { background-color: transparent; }
 
         .text-primary { color: var(--color-primary); }
         .bg-primary { background-color: var(--color-primary); }
@@ -269,17 +253,8 @@
 </head>
 <body class="bg-app">
 
-    <!-- NAYA: YouTube Background -->
-    <div id="youtube-bg">
-        <!-- 
-          NAYA: Video ID (NdXstDDOz9Y) ko aapke link se update kar diya gaya hai.
-        -->
-        <iframe 
-            src="https://www.youtube.com/embed/NdXstDDOz9Y?autoplay=1&mute=1&loop=1&playlist=NdXstDDOz9Y&controls=0&showinfo=0&autohide=1&modestbranding=1&rel=0" 
-            frameborder="0" 
-            allow="autoplay; encrypted-media">
-        </iframe>
-    </div>
+    <!-- NAYA: Coding (Matrix) Background -->
+    <canvas id="coding-bg"></canvas>
     
     <!-- Message Box (Alert/Error) -->
     <div id="message-box" class="hidden fixed top-5 right-5 z-[100] p-4 rounded-lg shadow-lg">
@@ -736,7 +711,7 @@
     </script>
     
     <!-- 
-      NAYA: Gemini AI Logic & Simulated Auth (Module script mein)
+      NAYA: Gemini AI Logic, Simulated Auth & Coding BG (Module script mein)
     -->
     <script type="module">
         // Global variables
@@ -1079,6 +1054,62 @@
                 toggleButtonSpinner(button, false);
             });
         }
+        
+        // ===== NAYA: Coding Background Logic =====
+        function initCodingBackground() {
+            const canvas = document.getElementById('coding-bg');
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            
+            let width, height;
+            let drops;
+            const fontSize = 14;
+            const characters = "01";
+            
+            function resizeCanvas() {
+                width = canvas.width = window.innerWidth;
+                height = canvas.height = window.innerHeight;
+                
+                const columns = Math.floor(width / fontSize);
+                drops = [];
+                for (let x = 0; x < columns; x++) {
+                    drops[x] = Math.floor(Math.random() * height / fontSize);
+                }
+            }
+
+            function draw() {
+                const isDark = document.documentElement.classList.contains('dark');
+                
+                // Puraane frames ko fade karne ke liye
+                ctx.fillStyle = isDark ? 
+                    'rgba(11, 17, 32, 0.05)' : /* Dark mode fade */
+                    'rgba(241, 245, 249, 0.05)'; /* Light mode fade */
+                ctx.fillRect(0, 0, width, height);
+                
+                // Text color
+                ctx.fillStyle = isDark ? 
+                    '#34D399' : /* Dark mode text (Green) */
+                    '#BFDBFE'; /* Light mode text (Light Blue) */
+                ctx.font = fontSize + 'px Inter';
+
+                for (let i = 0; i < drops.length; i++) {
+                    const text = characters[Math.floor(Math.random() * characters.length)];
+                    ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                    
+                    // Drop ko neeche bhejein
+                    if (drops[i] * fontSize > height && Math.random() > 0.975) {
+                        drops[i] = 0; // Top par reset karein
+                    }
+                    drops[i]++;
+                }
+            }
+
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+            setInterval(draw, 50); // Animation speed (thoda slow, subtle effect ke liye)
+        }
+
 
         // ===== Main Initialization =====
         document.addEventListener('DOMContentLoaded', () => {
@@ -1101,6 +1132,7 @@
             initMusicFeatures();
             initMCNFeatures();
             initProfileForm();
+            initCodingBackground(); // Naya background chalu karein
             
             // --- Default Data ---
             if (profileEmail) profileEmail.textContent = "user@rsfilmsgroup.com";
