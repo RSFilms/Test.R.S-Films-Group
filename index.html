@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <!-- 
-  FIX: Firebase (Login) ko hata diya gaya hai. Website ab seedhe Home Page par khulegi.
-  FIX: "White Screen" ki problem 100% fix ho gayi hai.
-  Theme: Default Light Mode + Animated Gradient
+  NAYA: Background video ko user ke naye video (NdXstDDOz9Y) se badal diya gaya hai.
+  FIX: White screen ki problem solved hai. Website seedhe Home Page par khulti hai.
+  Theme: Default Light Mode
   FEATURE: AI features aur Profile UI abhi bhi maujood hain.
 -->
 <html lang="hi">
@@ -43,30 +43,44 @@
             -moz-osx-font-smoothing: grayscale;
         }
 
-        /* --- NAYA: Animated Gradient Background (Video ka Solution) --- */
-        #full-page-animated-bg {
+        /* --- NAYA: YouTube Background Styles --- */
+        #youtube-bg {
             position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            width: 100vw; height: 100vh;
-            background: linear-gradient(-45deg, #F1F5F9, #E0E7FF, #BFDBFE, #E0E7FF);
-            background-size: 400% 400%;
-            animation: gradientBG 20s ease infinite;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
             z-index: -10;
-            opacity: 1;
         }
-        .dark #full-page-animated-bg {
-            background: linear-gradient(-45deg, #0B1120, #131B2E, #1E293B, #131B2E);
-            animation: gradientBG 20s ease infinite;
+        #youtube-bg::after { /* Text readability ke liye overlay */
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(255, 255, 255, 0.3); /* Light mode overlay */
+            z-index: -9;
         }
-        @keyframes gradientBG {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
+        .dark #youtube-bg::after {
+            background-color: rgba(0, 0, 0, 0.5); /* Dark mode overlay */
         }
+        
+        #youtube-bg iframe {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 100vw;
+            height: 100vh;
+            /* Screen ko cover karne ke liye video ko bada karein */
+            min-width: 110vw; 
+            min-height: 120vh;
+            transform: translate(-50%, -50%);
+            pointer-events: none; /* Video par click hone se rokein */
+        }
+
 
         /* --- Light Mode (Default) --- */
         body {
-            background-color: transparent; /* Gradient dikhane ke liye */
+            background-color: transparent; /* Background dikhane ke liye */
             color: var(--color-text-light);
         }
         .bg-card { background-color: var(--color-card-light); }
@@ -79,11 +93,11 @@
         .text-main { color: var(--color-text-light); }
         .text-heading { color: #0F172A; }
         .border-main { border-color: var(--color-border-light); }
-        .bg-app { background-color: transparent; } /* Gradient dikhane ke liye */
+        .bg-app { background-color: transparent; } /* Background dikhane ke liye */
 
         /* --- Dark Mode --- */
         .dark body {
-            background-color: transparent; /* Gradient dikhane ke liye */
+            background-color: transparent; /* Background dikhane ke liye */
             color: var(--color-text-dark);
         }
         .dark .bg-card { background-color: var(--color-card-dark); }
@@ -96,7 +110,7 @@
         .dark .text-main { color: var(--color-text-dark); }
         .dark .text-heading { color: #F1F5F9; }
         .dark .border-main { border-color: var(--color-border-dark); }
-        .dark .bg-app { background-color: transparent; } /* Gradient dikhane ke liye */
+        .dark .bg-app { background-color: transparent; } /* Background dikhane ke liye */
 
         .text-primary { color: var(--color-primary); }
         .bg-primary { background-color: var(--color-primary); }
@@ -255,8 +269,17 @@
 </head>
 <body class="bg-app">
 
-    <!-- NAYA: Animated Gradient Background -->
-    <div id="full-page-animated-bg"></div>
+    <!-- NAYA: YouTube Background -->
+    <div id="youtube-bg">
+        <!-- 
+          NAYA: Video ID (NdXstDDOz9Y) ko aapke link se update kar diya gaya hai.
+        -->
+        <iframe 
+            src="https://www.youtube.com/embed/NdXstDDOz9Y?autoplay=1&mute=1&loop=1&playlist=NdXstDDOz9Y&controls=0&showinfo=0&autohide=1&modestbranding=1&rel=0" 
+            frameborder="0" 
+            allow="autoplay; encrypted-media">
+        </iframe>
+    </div>
     
     <!-- Message Box (Alert/Error) -->
     <div id="message-box" class="hidden fixed top-5 right-5 z-[100] p-4 rounded-lg shadow-lg">
