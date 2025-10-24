@@ -16,9 +16,6 @@
     
     <!-- 
       ===== NAYA CSS NAVIGATION (100% RELIABLE) =====
-      Hum navigation ke liye JavaScript ka istemaal NAHI kar rahe hain.
-      Hum CSS :target aur :has() ka istemaal kar rahe hain.
-      Yeh 100% guarantee dega ki page open hoga.
     -->
     <style>
         :root {
@@ -95,32 +92,18 @@
             border-color: var(--color-primary); color: var(--color-primary);
         }
 
-        /* ===== NAYA CSS NAVIGATION LOGIC =====
-          Yeh 100% bug-free hai.
-        */
+        /* ===== NAYA CSS NAVIGATION LOGIC ===== */
         .page-section {
             display: none; /* Sabhi pages by default hide karein */
             animation: pageFadeIn 0.4s ease-out;
             min-height: 80vh;
         }
-        
-        /* Jab koi page URL hash (jaise #page-services) se match hota hai, use dikhayein */
         .page-section:target {
             display: block;
         }
-        
-        /* Default Page Logic:
-          Agar main container (jismein sabhi pages hain) ke andar koi bhi :target element nahi hai,
-          toh #page-home ko dikhayein.
-        */
         main:not(:has(:target)) #page-home {
             display: block;
         }
-        /* Edge Case: Agar user #page-home par click karta hai, toh :target rule
-          #page-home ko dikhayega, aur :has() rule ignore ho jayega.
-          Yeh logic 100% sahi kaam karega.
-        */
-
         @keyframes pageFadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
@@ -132,9 +115,6 @@
             font-weight: 500; border-bottom: 2px solid transparent;
         }
         .nav-link:hover { color: var(--color-primary); }
-        
-        /* Active link ko JS se nahi, CSS se manage karenge */
-        /* Yeh thoda tricky hai, isliye hum active state ko JS se hi toggle karenge */
         .nav-link.active {
             color: var(--color-primary); font-weight: 600;
             border-bottom-color: var(--color-primary);
@@ -225,7 +205,6 @@
             updateTheme(document.documentElement.classList.contains('dark'));
             
             // Active Link Management
-            // Yeh CSS :target ke saath kaam karega
             function updateActiveLink() {
                 let currentPageId = window.location.hash.substring(1); // e.g., "#page-home" -> "page-home"
                 if (!currentPageId) {
@@ -240,13 +219,9 @@
                 if (mobileMenu) mobileMenu.classList.add('hidden');
             }
             
-            // Hash badalne par (link click) active state update karein
             window.addEventListener('hashchange', updateActiveLink);
-            
-            // Page load par active state set karein
             updateActiveLink();
             
-            // Agar hash nahi hai, toh default hash set karein (BUG FIX)
             if (!window.location.hash) {
                 window.location.hash = '#page-home';
             }
@@ -310,9 +285,6 @@
     
     <!-- 
       ===== Main Content Area =====
-      Sabhi pages yahaan hain.
-      CSS logic (main:not(:has(:target)) #page-home)
-      #page-home ko default mein dikhayega.
     -->
     <main class="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
     
@@ -1004,28 +976,27 @@
 
         <!-- 
           ===== Page: Home (Default) =====
-          Ise HTML mein neeche rakha hai taaki :has() selector sahi se kaam kare.
         -->
         <section id="page-home" class="page-section">
             <!-- Hero Section -->
             <div class="relative rounded-lg shadow-xl overflow-hidden h-[60vh] flex items-center justify-center text-center p-8">
-                <!-- ===== Background Video (Naya) ===== -->
-<video 
-    autoplay 
-    loop 
-    muted 
-    playsinline
-    class="absolute inset-0 w-full h-full object-cover opacity-30 z-0"
->
-    <!-- 
-        YEH SAMPLE VIDEO HAI.
-        Aapko bas is 'src' ko apne video URL se badalna hai.
-        Aap pexels.com ya pixabay.com se free video use kar sakte hain.
-    -->
-    <source src="https://www.pexels.com/download/video/29460385/>
-    Aapka browser video tag ko support nahi karta.
-</video>
-<!-- ===== End Background Video ===== -->
+                
+                <!-- ===== Background Video (AAPKE LIYE ADD KAR DIYA HAI) ===== -->
+                <video 
+                    autoplay 
+                    loop 
+                    muted 
+                    playsinline
+                    class="absolute inset-0 w-full h-full object-cover opacity-30 z-0"
+                >
+                    <!-- 
+                        YEH VIDEO PEHLE SE ADDED HAI (DJ Mixing Console)
+                    -->
+                    <source src="https://www.pexels.com/video/dynamic-white-abstract-wavy-motion-background-29470941/.mp4" type="video/mp4">
+                    
+                </video>
+                <!-- ===== End Background Video ===== -->
+
                 <div class="relative z-10">
                     <h1 class="text-4xl md:text-6xl font-bold text-white mb-4">R.S Films Group</h1>
                     <p class="text-xl md:text-2xl text-primary font-semibold mb-8">The Ultimate All-in-One Creator Platform</p>
