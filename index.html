@@ -1,9 +1,14 @@
 <!DOCTYPE html>
 <!-- 
-  NAYA: YouTube video ko hata diya gaya hai.
-  NAYA: Ek naya "Coding / Matrix" style animated background (CSS/JS) add kiya gaya hai.
-  FIX: Refresh problem 100% solved.
-  Theme: Default Light Mode
+  VERSION: Complete Platform v2
+  NAYA: Sabhi puraane pages (Clients, Team, FAQ, Blog, Contact) add kar diye gaye hain.
+  NAYA: Homepage par Testimonials aur Team ka summary section hai.
+  NAYA: Header mein "More" dropdown hai.
+  FEATURE: "Coding" animated background.
+  FEATURE: Default Light Mode (with Dark Mode toggle).
+  FEATURE: AI features (Chat, Music, MCN) maujood hain.
+  FEATURE: Simulated Profile/Login system maujood hai.
+  FIX: Navigation 100% working hai.
 -->
 <html lang="hi">
 <head>
@@ -135,8 +140,8 @@
             border-bottom-color: var(--color-primary);
         }
         
-        /* --- NAYA: Profile Dropdown --- */
-        #profile-dropdown {
+        /* --- NAYA: Profile & More Dropdown --- */
+        .dropdown-menu {
             display: none;
             position: absolute;
             top: 100%;
@@ -144,8 +149,8 @@
             margin-top: 0.5rem;
             width: 200px;
         }
-        #profile-button:hover + #profile-dropdown,
-        #profile-dropdown:hover {
+        .dropdown-toggle:hover + .dropdown-menu,
+        .dropdown-menu:hover {
             display: block;
         }
 
@@ -249,6 +254,21 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        
+        /* NAYA: FAQ Accordion */
+        .faq-item summary {
+            cursor: pointer;
+            padding: 1rem;
+            font-weight: 600;
+            color: var(--text-heading);
+        }
+        .faq-item[open] summary {
+            color: var(--color-primary);
+        }
+        .faq-content {
+            padding: 0 1rem 1rem 1rem;
+            color: var(--text-main);
+        }
     </style>
 </head>
 <body class="bg-app">
@@ -329,11 +349,37 @@
                     <!-- Desktop Navigation Links -->
                     <nav class="hidden md:flex items-center space-x-2">
                         <a class="nav-link active" data-page="page-home" onclick="showPage('page-home')">Home</a>
-                        <a class="nav-link" data-page="page-services" onclick="showPage('page-services')">Services & Pricing</a>
+                        <a class="nav-link" data-page="page-services" onclick="showPage('page-services')">Services</a>
                         <a class="nav-link" data-page="page-bazaar" onclick="showPage('page-bazaar')">Bazaar</a>
-                        <a class="nav-link" data-page="page-music" onclick="showPage('page-music')">Music Distribution</a>
+                        <a class="nav-link" data-page="page-music" onclick="showPage('page-music')">Music</a>
                         <a class="nav-link" data-page="page-mcn" onclick="showPage('page-mcn')">MCN</a>
                         <a class="nav-link" data-page="page-chat" onclick="showPage('page-chat')">✨ AI Chat</a>
+                        
+                        <!-- NAYA: More Dropdown -->
+                        <div class="relative">
+                            <button class="nav-link dropdown-toggle flex items-center">
+                                Aur Dekhein <ion-icon name="chevron-down-outline" class="ml-1"></ion-icon>
+                            </button>
+                            <div class="dropdown-menu bg-card border border-main rounded-lg shadow-lg overflow-hidden z-50">
+                                <nav class="py-1">
+                                    <a href="#" class="block px-4 py-2 text-sm text-main hover:bg-gray-100 dark:hover:bg-gray-700" onclick="showPage('page-blog')">
+                                        Blog (Gyaan)
+                                    </a>
+                                    <a href="#" class="block px-4 py-2 text-sm text-main hover:bg-gray-100 dark:hover:bg-gray-700" onclick="showPage('page-clients')">
+                                        Humare Clients
+                                    </a>
+                                    <a href="#" class="block px-4 py-2 text-sm text-main hover:bg-gray-100 dark:hover:bg-gray-700" onclick="showPage('page-team')">
+                                        Humari Team
+                                    </a>
+                                    <a href="#" class="block px-4 py-2 text-sm text-main hover:bg-gray-100 dark:hover:bg-gray-700" onclick="showPage('page-faq')">
+                                        FAQ (Sawaal)
+                                    </a>
+                                    <a href="#" class="block px-4 py-2 text-sm text-main hover:bg-gray-100 dark:hover:bg-gray-700" onclick="showPage('page-contact')">
+                                        Sampark Karein
+                                    </a>
+                                </nav>
+                            </div>
+                        </div>
                     </nav>
                     
                     <!-- Header Buttons -->
@@ -344,12 +390,12 @@
                         
                         <!-- NAYA: Profile Button & Dropdown -->
                         <div class="relative">
-                            <button id="profile-button" class="p-2 rounded-full text-main hover:bg-gray-200 dark:hover:bg-gray-700">
+                            <button id="profile-button" class="dropdown-toggle p-2 rounded-full text-main hover:bg-gray-200 dark:hover:bg-gray-700">
                                 <ion-icon name="person-circle-outline" class="text-2xl"></ion-icon>
                             </button>
                             
                             <!-- Dropdown Menu -->
-                            <div id="profile-dropdown" class="bg-card border border-main rounded-lg shadow-lg overflow-hidden z-50">
+                            <div id="profile-dropdown" class="dropdown-menu bg-card border border-main rounded-lg shadow-lg overflow-hidden z-50">
                                 <div class="p-3 border-b border-main">
                                     <p class="text-sm font-medium text-heading truncate" id="profile-email">user@example.com</p>
                                 </div>
@@ -374,11 +420,16 @@
             <!-- Mobile Menu (Hidden) -->
             <div id="mobile-menu" class="md:hidden hidden bg-header border-t border-main p-4 space-y-2">
                 <a class="nav-link block active" data-page="page-home" onclick="showPage('page-home')">Home</a>
-                <a class="nav-link block" data-page="page-services" onclick="showPage('page-services')">Services & Pricing</a>
+                <a class="nav-link block" data-page="page-services" onclick="showPage('page-services')">Services</a>
                 <a class="nav-link block" data-page="page-bazaar" onclick="showPage('page-bazaar')">Bazaar</a>
-                <a class="nav-link block" data-page="page-music" onclick="showPage('page-music')">Music Distribution</a>
+                <a class="nav-link block" data-page="page-music" onclick="showPage('page-music')">Music</a>
                 <a class="nav-link block" data-page="page-mcn" onclick="showPage('page-mcn')">MCN</a>
                 <a class="nav-link block" data-page="page-chat" onclick="showPage('page-chat')">✨ AI Chat</a>
+                <a class="nav-link block" data-page="page-blog" onclick="showPage('page-blog')">Blog (Gyaan)</a>
+                <a class="nav-link block" data-page="page-clients" onclick="showPage('page-clients')">Humare Clients</a>
+                <a class="nav-link block" data-page="page-team" onclick="showPage('page-team')">Humari Team</a>
+                <a class="nav-link block" data-page="page-faq" onclick="showPage('page-faq')">FAQ</a>
+                <a class="nav-link block" data-page="page-contact" onclick="showPage('page-contact')">Sampark Karein</a>
                 <a class="nav-link block" data-page="page-profile" onclick="showPage('page-profile')">My Profile</a>
             </div>
         </header>
@@ -420,6 +471,70 @@
                             <ion-icon name="color-palette-outline" class="text-4xl text-primary mb-4"></ion-icon>
                             <h3 class="text-xl font-semibold text-heading mb-3">Design & Editing</h3>
                             <p class="text-main">Professional video editing, poster design, aur aapke brand ke liye visuals.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- NAYA: Team Summary -->
+                <div class="my-16">
+                    <h2 class="text-3xl font-bold text-heading text-center mb-8">Humari Team Se Milein</h2>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
+                        <div class="text-center">
+                            <img src="https://placehold.co/100x100/3B82F6/FFFFFF?text=CEO" alt="Team Member" class="w-24 h-24 rounded-full mx-auto mb-3 shadow-lg">
+                            <h3 class="font-semibold text-heading">R.S. (Aapka Naam)</h3>
+                            <p class="text-primary text-sm">Founder & CEO</p>
+                        </div>
+                        <div class="text-center">
+                            <img src="https://placehold.co/100x100/10B981/FFFFFF?text=Lead" alt="Team Member" class="w-24 h-24 rounded-full mx-auto mb-3 shadow-lg">
+                            <h3 class="font-semibold text-heading">Priya Singh</h3>
+                            <p class="text-primary text-sm">Head of Design</p>
+                        </div>
+                        <div class="text-center">
+                            <img src="https://placehold.co/100x100/F59E0B/FFFFFF?text=Mgr" alt="Team Member" class="w-24 h-24 rounded-full mx-auto mb-3 shadow-lg">
+                            <h3 class="font-semibold text-heading">Rohan Mehra</h3>
+                            <p class="text-primary text-sm">Music Head</p>
+                        </div>
+                        <div class="text-center">
+                            <img src="https://placehold.co/100x100/EF4444/FFFFFF?text=YT" alt="Team Member" class="w-24 h-24 rounded-full mx-auto mb-3 shadow-lg">
+                            <h3 class="font-semibold text-heading">Aman Verma</h3>
+                            <p class="text-primary text-sm">YouTube Strategist</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- NAYA: Testimonials -->
+                <div class="my-16">
+                    <h2 class="text-3xl font-bold text-heading text-center mb-8">Humare Clients Kya Kehte Hain</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="bg-card border border-main rounded-lg p-6 shadow-sm">
+                            <p class="text-main mb-4">"R.S Films Group ne mera music career badal diya. Unki distribution service best hai."</p>
+                            <div class="flex items-center">
+                                <img src="https://placehold.co/40x40/3B82F6/FFFFFF?text=A" alt="Client" class="w-10 h-10 rounded-full mr-3">
+                                <div>
+                                    <h4 class="font-semibold text-heading">DJ Raaj</h4>
+                                    <p class="text-sm text-main">Musician</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-card border border-main rounded-lg p-6 shadow-sm">
+                            <p class="text-main mb-4">"Mera YouTube channel 10k se 100k subscribers tak inki team ki wajah se pahuncha. Highly recommended!"</p>
+                            <div class="flex items-center">
+                                <img src="https://placehold.co/40x40/10B981/FFFFFF?text=V" alt="Client" class="w-10 h-10 rounded-full mr-3">
+                                <div>
+                                    <h4 class="font-semibold text-heading">Tech Vlogger</h4>
+                                    <p class="text-sm text-main">YouTuber</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-card border border-main rounded-lg p-6 shadow-sm">
+                            <p class="text-main mb-4">"Poster design ekdum unique aur professional tha. Kaam time par deliver hua."</p>
+                            <div class="flex items-center">
+                                <img src="https://placehold.co/40x40/F59E0B/FFFFFF?text=S" alt="Client" class="w-10 h-10 rounded-full mr-3">
+                                <div>
+                                    <h4 class="font-semibold text-heading">SK Films</h4>
+                                    <p class="text-sm text-main">Production House</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -487,6 +602,19 @@
                                 <td class="p-3 text-center text-heading font-medium">15 / month</td>
                                 <td class="p-3 text-center text-heading font-medium bg-primary-light">30 / month</td>
                                 <td class="p-3 text-center text-heading font-medium">Unlimited</td>
+                            </tr>
+                            <tr class="border-b border-main"><td colspan="4" class="p-3 bg-app font-semibold text-heading text-sm">Music Distribution</td></tr>
+                            <tr class="border-b border-main">
+                                <td class="p-3 text-main">All Major Platforms</td>
+                                <td class="p-3 text-center text-green-500"><ion-icon name="checkmark-outline"></ion-icon></td>
+                                <td class="p-3 text-center text-green-500 bg-primary-light"><ion-icon name="checkmark-outline"></ion-icon></td>
+                                <td class="p-3 text-center text-green-500"><ion-icon name="checkmark-outline"></ion-icon></td>
+                            </tr>
+                            <tr class="border-b border-main">
+                                <td class="p-3 text-main">Royalty Split</td>
+                                <td class="p-3 text-center text-heading font-medium">80%</td>
+                                <td class="p-3 text-center text-heading font-medium bg-primary-light">90%</td>
+                                <td class="p-3 text-center text-heading font-medium">100%</td>
                             </tr>
                         </tbody>
                     </table>
@@ -594,7 +722,37 @@
                             </div>
                         </div>
                     </div>
-                    <!-- ... aur products ... -->
+                    <!-- ... 8 aur products ... -->
+                    <div class="bg-card border border-main rounded-lg overflow-hidden shadow-sm">
+                        <img src="https://placehold.co/600x400/10B981/FFFFFF?text=Vlog+Pack" alt="Product" class="w-full h-32 object-cover">
+                        <div class="p-3">
+                            <h3 class="text-sm font-semibold text-heading truncate">Vlogger Edit Pack</h3>
+                            <div class="flex justify-between items-center mt-2">
+                                <p class="text-lg font-bold text-primary">$45</p>
+                                <button class="btn btn-secondary text-xs py-1 px-2">Buy</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-card border border-main rounded-lg overflow-hidden shadow-sm">
+                        <img src="https://placehold.co/600x400/EF4444/FFFFFF?text=Sound+FX" alt="Product" class="w-full h-32 object-cover">
+                        <div class="p-3">
+                            <h3 class="text-sm font-semibold text-heading truncate">Pro Sound FX</h3>
+                            <div class="flex justify-between items-center mt-2">
+                                <p class="text-lg font-bold text-primary">$19</p>
+                                <button class="btn btn-secondary text-xs py-1 px-2">Buy</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-card border border-main rounded-lg overflow-hidden shadow-sm">
+                        <img src="https://placehold.co/600x400/6366F1/FFFFFF?text=Thumbnails" alt="Product" class="w-full h-32 object-cover">
+                        <div class="p-3">
+                            <h3 class="text-sm font-semibold text-heading truncate">10x Thumbnail PSD</h3>
+                            <div class="flex justify-between items-center mt-2">
+                                <p class="text-lg font-bold text-primary">$15</p>
+                                <button class="btn btn-secondary text-xs py-1 px-2">Buy</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 
                 <!-- Hire a Professional -->
@@ -613,7 +771,19 @@
                         <p class="text-primary font-medium text-xs mb-2">Graphic Designer</p>
                         <button class="btn btn-primary w-full text-sm py-2 px-3">Hire</button>
                     </div>
-                    <!-- ... aur profiles ... -->
+                    <!-- ... 6 aur professionals ... -->
+                    <div class="bg-card border border-main rounded-lg p-4 text-center shadow-sm">
+                        <img src="https://placehold.co/100x100/F59E0B/FFFFFF?text=Kabir" alt="Pro" class="w-20 h-20 rounded-full mx-auto mb-3">
+                        <h3 class="text-base font-semibold text-heading">Kabir Khan</h3>
+                        <p class="text-primary font-medium text-xs mb-2">Music Producer</p>
+                        <button class="btn btn-primary w-full text-sm py-2 px-3">Hire</button>
+                    </div>
+                    <div class="bg-card border border-main rounded-lg p-4 text-center shadow-sm">
+                        <img src="https://placehold.co/100x100/EF4444/FFFFFF?text=Aisha" alt="Pro" class="w-20 h-20 rounded-full mx-auto mb-3">
+                        <h3 class="text-base font-semibold text-heading">Aisha Malik</h3>
+                        <p class="text-primary font-medium text-xs mb-2">SEO Expert</p>
+                        <button class="btn btn-primary w-full text-sm py-2 px-3">Hire</button>
+                    </div>
                 </div>
             </section>
     
@@ -663,6 +833,169 @@
                                 <button type="submit" class="btn btn-primary">Update Password</button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ===== NAYA: Page Blog (Gyaan) ===== -->
+            <section id="page-blog" class="page-section">
+                <h1 class="text-3xl font-bold text-heading mb-6">Creator Gyaan (Blog)</h1>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- Blog Post 1 -->
+                    <div class="bg-card border border-main rounded-lg shadow-sm overflow-hidden">
+                        <img src="https://placehold.co/600x400/3B82F6/FFFFFF?text=YouTube+SEO" alt="Blog" class="w-full h-40 object-cover">
+                        <div class="p-4">
+                            <h3 class="text-lg font-semibold text-heading mb-2">YouTube SEO 2025: Video Rank Karne Ke 5 Tareeke</h3>
+                            <p class="text-main text-sm mb-3">YouTube algorithm kaise kaam karta hai aur aap kaise top par aa sakte hain...</p>
+                            <a href="#" class="text-primary font-medium text-sm">Poora Padhein →</a>
+                        </div>
+                    </div>
+                    <!-- Blog Post 2 -->
+                    <div class="bg-card border border-main rounded-lg shadow-sm overflow-hidden">
+                        <img src="https://placehold.co/600x400/10B981/FFFFFF?text=Music+Promotion" alt="Blog" class="w-full h-40 object-cover">
+                        <div class="p-4">
+                            <h3 class="text-lg font-semibold text-heading mb-2">Music Promotion: Spotify Par Followers Kaise Badhayein</h3>
+                            <p class="text-main text-sm mb-3">Apne naye gaane ko release karne ke baad playlists mein kaise pahunchayein...</p>
+                            <a href="#" class="text-primary font-medium text-sm">Poora Padhein →</a>
+                        </div>
+                    </div>
+                    <!-- Blog Post 3 -->
+                    <div class="bg-card border border-main rounded-lg shadow-sm overflow-hidden">
+                        <img src="https://placehold.co/600x400/F59E0B/FFFFFF?text=AI+Editing" alt="Blog" class="w-full h-40 object-cover">
+                        <div class="p-4">
+                            <h3 class="text-lg font-semibold text-heading mb-2">AI Video Editing: Aapka Samay Bachane Waale Tools</h3>
+                            <p class="text-main text-sm mb-3">Kaise AI tools aapki editing ko 10 guna tez bana sakte hain. Humare top picks...</p>
+                            <a href="#" class="text-primary font-medium text-sm">Poora Padhein →</a>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ===== NAYA: Page Clients ===== -->
+            <section id="page-clients" class="page-section">
+                <h1 class="text-3xl font-bold text-heading mb-6">Humare Clients</h1>
+                <p class="text-main mb-8 max-w-2xl">Humein garv hai ki humne in behtareen creators aur brands ke saath kaam kiya hai. Inki success hi humari success hai.</p>
+                <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
+                    <!-- Client Logos -->
+                    <div class="bg-card border border-main rounded-lg p-6 flex items-center justify-center h-24 shadow-sm">
+                        <img src="https://placehold.co/150x50/CBD5E1/334155?text=Client+Logo+1" alt="Client Logo 1" class="h-8">
+                    </div>
+                    <div class="bg-card border border-main rounded-lg p-6 flex items-center justify-center h-24 shadow-sm">
+                        <img src="https://placehold.co/150x50/CBD5E1/334155?text=Client+Logo+2" alt="Client Logo 2" class="h-8">
+                    </div>
+                    <div class="bg-card border border-main rounded-lg p-6 flex items-center justify-center h-24 shadow-sm">
+                        <img src="https://placehold.co/150x50/CBD5E1/334155?text=Client+Logo+3" alt="Client Logo 3" class="h-8">
+                    </div>
+                    <div class="bg-card border border-main rounded-lg p-6 flex items-center justify-center h-24 shadow-sm">
+                        <img src="https://placehold.co/150x50/CBD5E1/334155?text=Client+Logo+4" alt="Client Logo 4" class="h-8">
+                    </div>
+                    <div class="bg-card border border-main rounded-lg p-6 flex items-center justify-center h-24 shadow-sm">
+                        <img src="https://placehold.co/150x50/CBD5E1/334155?text=Client+Logo+5" alt="Client Logo 5" class="h-8">
+                    </div>
+                    <div class="bg-card border border-main rounded-lg p-6 flex items-center justify-center h-24 shadow-sm">
+                        <img src="https://placehold.co/150x50/CBD5E1/334155?text=Client+Logo+6" alt="Client Logo 6" class="h-8">
+                    </div>
+                </div>
+            </section>
+
+            <!-- ===== NAYA: Page Team ===== -->
+            <section id="page-team" class="page-section">
+                <h1 class="text-3xl font-bold text-heading mb-6">Humari Core Team</h1>
+                <p class="text-main mb-8 max-w-2xl">Humari safalta ke peeche in experts ka haath hai, jo creators ki zarooraton ko humse behtar samajhte hain.</p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-card border border-main rounded-lg p-6 shadow-sm text-center">
+                        <img src="https://placehold.co/120x120/3B82F6/FFFFFF?text=CEO" alt="Team Member" class="w-32 h-32 rounded-full mx-auto mb-4 shadow-lg">
+                        <h3 class="text-xl font-semibold text-heading">R.S. (Aapka Naam)</h3>
+                        <p class="text-primary font-medium mb-2">Founder & CEO</p>
+                        <p class="text-main text-sm">"Mera mission har Indian creator ko global stage par pahunchana hai."</p>
+                    </div>
+                    <div class="bg-card border border-main rounded-lg p-6 shadow-sm text-center">
+                        <img src="https://placehold.co/120x120/10B981/FFFFFF?text=Lead" alt="Team Member" class="w-32 h-32 rounded-full mx-auto mb-4 shadow-lg">
+                        <h3 class="text-xl font-semibold text-heading">Priya Singh</h3>
+                        <p class="text-primary font-medium mb-2">Head of Design</p>
+                        <p class="text-main text-sm">"Har poster ek kahani kehta hai. Main un kahaniyon ko design karti hoon."</p>
+                    </div>
+                    <div class="bg-card border border-main rounded-lg p-6 shadow-sm text-center">
+                        <img src="https://placehold.co/120x120/EF4444/FFFFFF?text=YT" alt="Team Member" class="w-32 h-32 rounded-full mx-auto mb-4 shadow-lg">
+                        <h3 class="text-xl font-semibold text-heading">Aman Verma</h3>
+                        <p class="text-primary font-medium mb-2">YouTube Strategist</p>
+                        <p class="text-main text-sm">"Aap content banayein, algorithm (SEO) hum par chhod dein."</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ===== NAYA: Page FAQ ===== -->
+            <section id="page-faq" class="page-section">
+                <h1 class="text-3xl font-bold text-heading mb-6">Aksar Pooche Jaane Waale Sawaal (FAQ)</h1>
+                <div class="bg-card border border-main rounded-lg shadow-lg max-w-3xl mx-auto">
+                    <!-- FAQ Item 1 -->
+                    <details class="faq-item border-b border-main">
+                        <summary>Music distribution mein kitna samay lagta hai?</summary>
+                        <div class="faq-content">
+                            <p>Aapka gaana submit karne ke baad, quality check hota hai. Iske baad, platforms (jaise Spotify, Apple Music) par live hone mein 2 se 5 business days lag sakte hain. Hum jald se jald process karne ki koshish karte hain.</p>
+                        </div>
+                    </details>
+                    <!-- FAQ Item 2 -->
+                    <details class="faq-item border-b border-main">
+                        <summary>Aapki MCN join karne ke kya fayde hain?</summary>
+                        <div class="faq-content">
+                            <p>MCN join karne se aapko copyright protection, brand deals, aur dedicated support milta hai. Hum aapke content ko galat istemaal se bachaate hain aur aapki earnings badhaane mein madad karte hain.</p>
+                        </div>
+                    </details>
+                    <!-- FAQ Item 3 -->
+                    <details class="faq-item border-b border-main">
+                        <summary>Kya main sirf poster design karwa sakta hoon?</summary>
+                        <div class="faq-content">
+                            <p>Bilkul! Aap humari kisi bhi service ko alag se le sakte hain. Aap "Bazaar" section mein "Hire a Professional" par jaakar seedhe humare graphic designers se bhi sampark kar sakte hain.</p>
+                        </div>
+                    </details>
+                    <!-- FAQ Item 4 -->
+                    <details class="faq-item">
+                        <summary>AI Chatbot kitna accurate hai?</summary>
+                        <div class="faq-content">
+                            <p>Humara AI Chatbot (Gemini par आधारित) latest data par trained hai. Yeh YouTube aur music trends par kaafi accurate salaah (advice) deta hai. Lekin, har channel unique hota hai, isliye iski salaah ko ek expert suggestion ki tarah lein.</p>
+                        </div>
+                    </details>
+                </div>
+            </section>
+
+            <!-- ===== NAYA: Page Contact ===== -->
+            <section id="page-contact" class="page-section">
+                <h1 class="text-3xl font-bold text-heading mb-6">Humse Sampark Karein</h1>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Contact Form -->
+                    <div class="bg-card border border-main rounded-lg shadow-lg p-6">
+                        <h2 class="text-xl font-semibold text-heading mb-4">Humein Message Bhejein</h2>
+                        <form id="contact-form" class="space-y-4">
+                            <div>
+                                <label class="form-label" for="contact-name">Aapka Naam</label>
+                                <input class="form-input" type="text" id="contact-name" required>
+                            </div>
+                            <div>
+                                <label class="form-label" for="contact-email">Email</label>
+                                <input class="form-input" type="email" id="contact-email" required>
+                            </div>
+                            <div>
+                                <label class="form-label" for="contact-message">Aapka Sandesh</label>
+                                <textarea class="form-input" id="contact-message" rows="5" required></textarea>
+                            </div>
+                            <div class="text-right">
+                                <button type="submit" class="btn btn-primary">Send Message</button>
+                            </div>
+                        </form>
+                    </div>
+                    <!-- Contact Info & Map -->
+                    <div class="bg-card border border-main rounded-lg shadow-lg p-6">
+                        <h2 class="text-xl font-semibold text-heading mb-4">Info</h2>
+                        <div class="space-y-3 text-main">
+                            <p class="flex items-center"><ion-icon name="mail-outline" class="text-primary text-xl mr-3"></ion-icon> info@rsfilmsgroup.com</p>
+                            <p class="flex items-center"><ion-icon name="call-outline" class="text-primary text-xl mr-3"></ion-icon> +91 99999 88888</p>
+                            <p class="flex items-center"><ion-icon name="location-outline" class="text-primary text-xl mr-3"></ion-icon> Film City, Noida, UP, India</p>
+                        </div>
+                        <!-- Google Map Placeholder -->
+                        <div class="mt-6 w-full h-48 bg-gray-200 rounded-lg flex items-center justify-center">
+                            <p class="text-gray-500">(Yahaan Google Map Embed Hoga)</p>
+                        </div>
                     </div>
                 </div>
             </section>
