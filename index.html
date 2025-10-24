@@ -868,24 +868,6 @@
                     initChat(); // Sirf login ke baad chat init karo
                 }
             });
-
-            // --- UI Listeners ---
-            
-            // Login/Signup Tabs
-            const loginTab = document.getElementById('login-tab-btn');
-            const signupTab = document.getElementById('signup-tab-btn');
-            loginTab.addEventListener('click', () => {
-                loginForm.classList.remove('hidden');
-                signupForm.classList.add('hidden');
-                loginTab.classList.add('text-primary', 'border-primary');
-                signupTab.classList.remove('text-primary', 'border-primary');
-            });
-            signupTab.addEventListener('click', () => {
-                loginForm.classList.add('hidden');
-                signupForm.classList.remove('hidden');
-                signupTab.classList.add('text-primary', 'border-primary');
-                loginTab.classList.remove('text-primary', 'border-primary');
-            });
             
             // Theme Toggle
             document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
