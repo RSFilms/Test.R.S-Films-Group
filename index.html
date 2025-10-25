@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <!-- 
-  VERSION: Homepage FIX
+  VERSION: Homepage FIX (Naya Rainbow Background)
   FIX: Poora Login/Auth simulation (jo homepage ko rok raha tha) hata diya gaya hai.
   FIX: Website ab seedhe Homepage (logged-in-view) par khulti hai.
   FIX: "Profile" aur "More" dropdowns ke liye CSS :hover logic ko hata kar naya, reliable JavaScript click listener add kiya gaya hai.
   FIX: Profile dropdown se "Sign Out" button hata diya gaya hai.
-  FEATURE: "Coding" animated background.
-  FEATURE: Default Light Mode (with Dark Mode toggle).
+  FEATURE: NAYA: Aapka diya gaya Rainbow animation background add kar diya gaya hai.
+  FEATURE: NAYA: Background fixed hai aur content scroll ho sakta hai.
   FEATURE: AI features (Chat, Music, MCN) maujood hain.
   FEATURE: Homepage par scroll animations aur Testimonial slider.
 -->
@@ -26,7 +26,7 @@
     <style>
         :root {
             --color-text-light: #334155;
-            --color-bg-light: #F1F5F9;
+            --color-bg-light: #F1F5F9; /* Light Grey Background */
             --color-card-light: #FFFFFF;
             --color-border-light: #E2E8F0;
             
@@ -39,11 +39,7 @@
             --color-primary-hover: #2563EB;
             --color-primary-light: rgba(59, 130, 246, 0.1);
             
-            /* Coding background colors */
-            --color-matrix-bg-light: rgba(241, 245, 249, 0.9);
-            --color-matrix-text-light: #BFDBFE; /* Light Blue */
-            --color-matrix-bg-dark: rgba(11, 17, 32, 0.95);
-            --color-matrix-text-dark: #34D399; /* Green */
+            /* REMOVED: Matrix/Particle color variables hata diye gaye hain */
         }
 
         /* --- Global Styles --- */
@@ -52,41 +48,30 @@
             font-size: 14px; /* Professional small font */
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
+            /* overflow: hidden; ko yahaan nahi rakha gaya hai taaki scrolling kaam kare */
         }
-
-        /* --- NAYA: Coding Background Styles --- */
-        #coding-bg {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            z-index: -10;
-            pointer-events: none;
-        }
-
 
         /* --- Light Mode (Default) --- */
         body {
-            background-color: var(--color-bg-light); 
+            background-color: transparent; /* NAYA: Transparent taaki background dikhe */
             color: var(--color-text-light);
         }
         .bg-card { background-color: var(--color-card-light); }
         .bg-header { background-color: var(--color-card-light); }
-        @supports (backdrop-filter: blur(10px)) {
-             /* Glassmorphism effect */
+        /* Glassmorphism effect abhi bhi apply hoga, lekin solid background par */
+         @supports (backdrop-filter: blur(10px)) {
              .bg-card { background-color: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); }
              .bg-header { background-color: rgba(255, 255, 255, 0.85); backdrop-filter: blur(10px); }
-        }
+         }
         
         .text-main { color: var(--color-text-light); }
         .text-heading { color: #0F172A; }
         .border-main { border-color: var(--color-border-light); }
-        .bg-app { background-color: transparent; } 
+        .bg-app { background-color: transparent; } /* NAYA: Transparent taaki background dikhe */
 
         /* --- Dark Mode --- */
         .dark body {
-            background-color: var(--color-bg-dark); 
+            background-color: transparent; /* NAYA: Transparent taaki background dikhe */
             color: var(--color-text-dark);
         }
         .dark .bg-card { background-color: var(--color-card-dark); }
@@ -99,7 +84,7 @@
         .dark .text-main { color: var(--color-text-dark); }
         .dark .text-heading { color: #F1F5F9; }
         .dark .border-main { border-color: var(--color-border-dark); }
-        .dark .bg-app { background-color: transparent; }
+        .dark .bg-app { background-color: transparent; } /* NAYA: Transparent taaki background dikhe */
 
         .text-primary { color: var(--color-primary); }
         .bg-primary { background-color: var(--color-primary); }
@@ -362,12 +347,216 @@
             color: var(--text-main);
         }
 
+        /* ===== NAYA: Rainbow Background Styles ===== */
+        .rainbow-background-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -10;
+            pointer-events: none;
+            overflow: hidden;
+            background-color: var(--color-bg-light); /* Light mode bg */
+        }
+        .dark .rainbow-background-container {
+             background-color: var(--color-bg-dark); /* Dark mode bg */
+        }
+        
+        .rainbow {
+            height: 100vh;
+            width: 0;
+            top: 0;
+            position: absolute;
+            transform: rotate(10deg);
+            transform-origin: top right;
+        }
+        .h {
+            box-shadow: 0 0 50vh 40vh white;
+            width: 100vw;
+            height: 0;
+            bottom: 0;
+            left: 0;
+            position: absolute;
+            z-index: 2;
+        }
+        .v {
+            box-shadow: 0 0 35vw 25vw white;
+            width: 0;
+            height: 100vh;
+            bottom: 0;
+            left: 0;
+            position: absolute;
+            z-index: 2;
+        }
+        @keyframes slide {
+            from { right: -25vw; }
+            to { right: 125vw; }
+        }
+
+        /* NAYA: Compiled SASS Loop (1-25) */
+        .rainbow:nth-child(1) {
+            box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(232 121 249), 0 0 50px 25px rgb(96 165 250), 50px 0 50px 25px rgb(94 234 212), 130px 0 80px 40px white;
+            animation: 44.1s linear infinite slide;
+            animation-delay: -1.8s;
+        }
+        .rainbow:nth-child(2) {
+            box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(232 121 249), 0 0 50px 25px rgb(94 234 212), 50px 0 50px 25px rgb(96 165 250), 130px 0 80px 40px white;
+            animation: 43.2s linear infinite slide;
+            animation-delay: -3.6s;
+        }
+        .rainbow:nth-child(3) {
+            box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(94 234 212), 0 0 50px 25px rgb(232 121 249), 50px 0 50px 25px rgb(96 165 250), 130px 0 80px 40px white;
+            animation: 42.3s linear infinite slide;
+            animation-delay: -5.4s;
+        }
+        .rainbow:nth-child(4) {
+            box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(94 234 212), 0 0 50px 25px rgb(96 165 250), 50px 0 50px 25px rgb(232 121 249), 130px 0 80px 40px white;
+            animation: 41.4s linear infinite slide;
+            animation-delay: -7.2s;
+        }
+        .rainbow:nth-child(5) {
+            box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(96 165 250), 0 0 50px 25px rgb(94 234 212), 50px 0 50px 25px rgb(232 121 249), 130px 0 80px 40px white;
+            animation: 40.5s linear infinite slide;
+            animation-delay: -9s;
+        }
+        .rainbow:nth-child(6) {
+            box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(96 165 250), 0 0 50px 25px rgb(232 121 249), 50px 0 50px 25px rgb(94 234 212), 130px 0 80px 40px white;
+            animation: 39.6s linear infinite slide;
+            animation-delay: -10.8s;
+        }
+        .rainbow:nth-child(7) {
+            box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(232 121 249), 0 0 50px 25px rgb(96 165 250), 50px 0 50px 25px rgb(94 234 212), 130px 0 80px 40px white;
+            animation: 38.7s linear infinite slide;
+            animation-delay: -12.6s;
+        }
+        .rainbow:nth-child(8) {
+            box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(232 121 249), 0 0 50px 25px rgb(94 234 212), 50px 0 50px 25px rgb(96 165 250), 130px 0 80px 40px white;
+            animation: 37.8s linear infinite slide;
+            animation-delay: -14.4s;
+        }
+        .rainbow:nth-child(9) {
+            box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(94 234 212), 0 0 50px 25px rgb(232 121 249), 50px 0 50px 25px rgb(96 165 250), 130px 0 80px 40px white;
+            animation: 36.9s linear infinite slide;
+            animation-delay: -16.2s;
+        }
+        .rainbow:nth-child(10) {
+            box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(94 234 212), 0 0 50px 25px rgb(96 165 250), 50px 0 50px 25px rgb(232 121 249), 130px 0 80px 40px white;
+            animation: 36s linear infinite slide;
+            animation-delay: -18s;
+        }
+        .rainbow:nth-child(11) {
+            box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(96 165 250), 0 0 50px 25px rgb(94 234 212), 50px 0 50px 25px rgb(232 121 249), 130px 0 80px 40px white;
+            animation: 35.1s linear infinite slide;
+            animation-delay: -19.8s;
+        }
+        .rainbow:nth-child(12) {
+            box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(96 165 250), 0 0 50px 25px rgb(232 121 249), 50px 0 50px 25px rgb(94 234 212), 130px 0 80px 40px white;
+            animation: 34.2s linear infinite slide;
+            animation-delay: -21.6s;
+        }
+        .rainbow:nth-child(13) {
+            box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(232 121 249), 0 0 50px 25px rgb(96 165 250), 50px 0 50px 25px rgb(94 234 212), 130px 0 80px 40px white;
+            animation: 33.3s linear infinite slide;
+            animation-delay: -23.4s;
+        }
+        .rainbow:nth-child(14) {
+            box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(232 121 249), 0 0 50px 25px rgb(94 234 212), 50px 0 50px 25px rgb(96 165 250), 130px 0 80px 40px white;
+            animation: 32.4s linear infinite slide;
+            animation-delay: -25.2s;
+        }
+        .rainbow:nth-child(15) {
+            box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(94 234 212), 0 0 50px 25px rgb(232 121 249), 50px 0 50px 25px rgb(96 165 250), 130px 0 80px 40px white;
+            animation: 31.5s linear infinite slide;
+            animation-delay: -27s;
+        }
+        .rainbow:nth-child(16) {
+            box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(94 234 212), 0 0 50px 25px rgb(96 165 250), 50px 0 50px 25px rgb(232 121 249), 130px 0 80px 40px white;
+            animation: 30.6s linear infinite slide;
+            animation-delay: -28.8s;
+        }
+        .rainbow:nth-child(17) {
+            box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(96 165 250), 0 0 50px 25px rgb(94 234 212), 50px 0 50px 25px rgb(232 121 249), 130px 0 80px 40px white;
+            animation: 29.7s linear infinite slide;
+            animation-delay: -30.6s;
+        }
+        .rainbow:nth-child(18) {
+            box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(96 165 250), 0 0 50px 25px rgb(232 121 249), 50px 0 50px 25px rgb(94 234 212), 130px 0 80px 40px white;
+            animation: 28.8s linear infinite slide;
+            animation-delay: -32.4s;
+        }
+        .rainbow:nth-child(19) {
+            box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(232 121 249), 0 0 50px 25px rgb(96 165 250), 50px 0 50px 25px rgb(94 234 212), 130px 0 80px 40px white;
+            animation: 27.9s linear infinite slide;
+            animation-delay: -34.2s;
+        }
+        .rainbow:nth-child(20) {
+            box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(232 121 249), 0 0 50px 25px rgb(94 234 212), 50px 0 50px 25px rgb(96 165 250), 130px 0 80px 40px white;
+            animation: 27s linear infinite slide;
+            animation-delay: -36s;
+        }
+        .rainbow:nth-child(21) {
+            box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(94 234 212), 0 0 50px 25px rgb(232 121 249), 50px 0 50px 25px rgb(96 165 250), 130px 0 80px 40px white;
+            animation: 26.1s linear infinite slide;
+            animation-delay: -37.8s;
+        }
+        .rainbow:nth-child(22) {
+            box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(94 234 212), 0 0 50px 25px rgb(96 165 250), 50px 0 50px 25px rgb(232 121 249), 130px 0 80px 40px white;
+            animation: 25.2s linear infinite slide;
+            animation-delay: -39.6s;
+        }
+        .rainbow:nth-child(23) {
+            box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(96 165 250), 0 0 50px 25px rgb(94 234 212), 50px 0 50px 25px rgb(232 121 249), 130px 0 80px 40px white;
+            animation: 24.3s linear infinite slide;
+            animation-delay: -41.4s;
+        }
+        .rainbow:nth-child(24) {
+            box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(96 165 250), 0 0 50px 25px rgb(232 121 249), 50px 0 50px 25px rgb(94 234 212), 130px 0 80px 40px white;
+            animation: 23.4s linear infinite slide;
+            animation-delay: -43.2s;
+        }
+        .rainbow:nth-child(25) {
+            box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(232 121 249), 0 0 50px 25px rgb(96 165 250), 50px 0 50px 25px rgb(94 234 212), 130px 0 80px 40px white;
+            animation: 22.5s linear infinite slide;
+            animation-delay: -45s;
+        }
+        /* ===== END Rainbow Background Styles ===== */
+
+
     </style>
 </head>
 <body class="bg-app">
 
-    <!-- NAYA: Coding (Matrix) Background -->
-    <canvas id="coding-bg"></canvas>
+    <!-- NAYA: Rainbow Background -->
+    <div class="rainbow-background-container">
+        <div class="rainbow"></div>
+        <div class="rainbow"></div>
+        <div class="rainbow"></div>
+        <div class="rainbow"></div>
+        <div class="rainbow"></div>
+        <div class="rainbow"></div>
+        <div class="rainbow"></div>
+        <div class="rainbow"></div>
+        <div class="rainbow"></div>
+        <div class="rainbow"></div>
+        <div class="rainbow"></div>
+        <div class="rainbow"></div>
+        <div class="rainbow"></div>
+        <div class="rainbow"></div>
+        <div class="rainbow"></div>
+        <div class="rainbow"></div>
+        <div class="rainbow"></div>
+        <div class="rainbow"></div>
+        <div class="rainbow"></div>
+        <div class="rainbow"></div>
+        <div class="rainbow"></div>
+        <div class="rainbow"></div>
+        <div class="rainbow"></div>
+        <div class="rainbow"></div>
+        <div class="rainbow"></div>
+        <div class="h"></div>
+        <div class="v"></div>
+    </div>
     
     <!-- Message Box (Alert/Error) -->
     <div id="message-box" class="hidden fixed top-5 right-5 z-[100] p-4 rounded-lg shadow-lg">
@@ -1451,7 +1640,7 @@
     </script>
     
     <!-- 
-      NAYA: Gemini AI Logic, Simulated Auth, Coding BG & Animations (Module script mein)
+      NAYA: Gemini AI Logic, Simulated Auth, Animations (Module script mein)
     -->
     <script type="module">
         // Global variables
@@ -1724,60 +1913,8 @@
             });
         }
         
-        // ===== NAYA: Coding Background Logic =====
-        function initCodingBackground() {
-            const canvas = document.getElementById('coding-bg');
-            if (!canvas) return;
-            
-            const ctx = canvas.getContext('2d');
-            
-            let width, height;
-            let drops;
-            const fontSize = 14;
-            const characters = "01";
-            
-            function resizeCanvas() {
-                width = canvas.width = window.innerWidth;
-                height = canvas.height = window.innerHeight;
-                
-                const columns = Math.floor(width / fontSize);
-                drops = [];
-                for (let x = 0; x < columns; x++) {
-                    drops[x] = Math.floor(Math.random() * height / fontSize);
-                }
-            }
-
-            function draw() {
-                const isDark = document.documentElement.classList.contains('dark');
-                
-                // Puraane frames ko fade karne ke liye
-                ctx.fillStyle = isDark ? 
-                    'rgba(11, 17, 32, 0.05)' : /* Dark mode fade */
-                    'rgba(241, 245, 249, 0.05)'; /* Light mode fade */
-                ctx.fillRect(0, 0, width, height);
-                
-                // Text color
-                ctx.fillStyle = isDark ? 
-                    '#34D399' : /* Dark mode text (Green) */
-                    '#BFDBFE'; /* Light mode text (Light Blue) */
-                ctx.font = fontSize + 'px Inter';
-
-                for (let i = 0; i < drops.length; i++) {
-                    const text = characters[Math.floor(Math.random() * characters.length)];
-                    ctx.fillText(text, i * fontSize, drops[i] * fontSize);
-                    
-                    // Drop ko neeche bhejein
-                    if (drops[i] * fontSize > height && Math.random() > 0.975) {
-                        drops[i] = 0; // Top par reset karein
-                    }
-                    drops[i]++;
-                }
-            }
-
-            resizeCanvas();
-            window.addEventListener('resize', resizeCanvas);
-            setInterval(draw, 50); // Animation speed (thoda slow, subtle effect ke liye)
-        }
+        // ===== REMOVED: Coding Background Logic (Particles) =====
+        // initCodingBackground() function poori tarah hata diya gaya hai
         
         // ===== NAYA: Homepage Scroll Animation Logic =====
         function initScrollAnimations() {
@@ -1810,6 +1947,8 @@
             
             const slides = slider.querySelectorAll('.testimonial-slide');
             const dots = dotsContainer.querySelectorAll('.testimonial-dot');
+            if (slides.length === 0 || dots.length === 0) return; // Exit if no slides
+            
             const totalSlides = slides.length;
 
             function updateSlider(slideIndex) {
@@ -1898,7 +2037,7 @@
             initMusicFeatures();
             initMCNFeatures();
             initProfileForm();
-            initCodingBackground();
+            // REMOVED: initCodingBackground(); call hata diya gaya hai
             initScrollAnimations();
             initTestimonialSlider();
             initBazaarFilters();
