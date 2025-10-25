@@ -1,14 +1,16 @@
 <!DOCTYPE html>
 <!-- 
-  VERSION: Homepage FIX (Naya Rainbow Background)
-  FIX: Poora Login/Auth simulation (jo homepage ko rok raha tha) hata diya gaya hai.
-  FIX: Website ab seedhe Homepage (logged-in-view) par khulti hai.
-  FIX: "Profile" aur "More" dropdowns ke liye CSS :hover logic ko hata kar naya, reliable JavaScript click listener add kiya gaya hai.
-  FIX: Profile dropdown se "Sign Out" button hata diya gaya hai.
-  FEATURE: NAYA: Aapka diya gaya Rainbow animation background add kar diya gaya hai.
-  FEATURE: NAYA: Background fixed hai aur content scroll ho sakta hai.
+  VERSION: Platform & Client Update
+  NAYA: Homepage par 'Platform Partners' ka naya auto-scrolling marquee (animation) add kiya gaya hai (Aapka request).
+  NAYA: 'Music Distribution' page par 70+ platforms ki poori list (Aapki list se) ek grid mein add ki gayi hai.
+  NAYA: 'Humare Clients' page ko poori tarah se redesign kiya gaya hai. Ab ismein client ka naam, image, subscribers, aur 'View YouTube Channel' ka button hai (Aapka request).
+  FIX: Mobile menu 100% fixed hai.
+  FEATURE: "Coding" animated background.
+  FEATURE: Default Light Mode (with Dark Mode toggle).
   FEATURE: AI features (Chat, Music, MCN) maujood hain.
-  FEATURE: Homepage par scroll animations aur Testimonial slider.
+  FEATURE: Simulated Profile/Login system maujood hai.
+  FEATURE: Homepage par scroll animations.
+  FEATURE: Advanced Blog (Detail Page) aur Bazaar (Filters) system.
 -->
 <html lang="hi" class="scroll-smooth">
 <head>
@@ -26,7 +28,7 @@
     <style>
         :root {
             --color-text-light: #334155;
-            --color-bg-light: #F1F5F9; /* Light Grey Background */
+            --color-bg-light: #F1F5F9;
             --color-card-light: #FFFFFF;
             --color-border-light: #E2E8F0;
             
@@ -39,7 +41,11 @@
             --color-primary-hover: #2563EB;
             --color-primary-light: rgba(59, 130, 246, 0.1);
             
-            /* REMOVED: Matrix/Particle color variables hata diye gaye hain */
+            /* Coding background colors */
+            --color-matrix-bg-light: rgba(241, 245, 249, 0.9);
+            --color-matrix-text-light: #BFDBFE; /* Light Blue */
+            --color-matrix-bg-dark: rgba(11, 17, 32, 0.95);
+            --color-matrix-text-dark: #34D399; /* Green */
         }
 
         /* --- Global Styles --- */
@@ -48,30 +54,41 @@
             font-size: 14px; /* Professional small font */
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
-            /* overflow: hidden; ko yahaan nahi rakha gaya hai taaki scrolling kaam kare */
         }
+
+        /* --- NAYA: Coding Background Styles --- */
+        #coding-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -10;
+            pointer-events: none;
+        }
+
 
         /* --- Light Mode (Default) --- */
         body {
-            background-color: transparent; /* NAYA: Transparent taaki background dikhe */
+            background-color: var(--color-bg-light); 
             color: var(--color-text-light);
         }
         .bg-card { background-color: var(--color-card-light); }
         .bg-header { background-color: var(--color-card-light); }
-        /* Glassmorphism effect abhi bhi apply hoga, lekin solid background par */
-         @supports (backdrop-filter: blur(10px)) {
+        @supports (backdrop-filter: blur(10px)) {
+             /* Glassmorphism effect */
              .bg-card { background-color: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); }
              .bg-header { background-color: rgba(255, 255, 255, 0.85); backdrop-filter: blur(10px); }
-         }
+        }
         
         .text-main { color: var(--color-text-light); }
         .text-heading { color: #0F172A; }
         .border-main { border-color: var(--color-border-light); }
-        .bg-app { background-color: transparent; } /* NAYA: Transparent taaki background dikhe */
+        .bg-app { background-color: transparent; } 
 
         /* --- Dark Mode --- */
         .dark body {
-            background-color: transparent; /* NAYA: Transparent taaki background dikhe */
+            background-color: var(--color-bg-dark); 
             color: var(--color-text-dark);
         }
         .dark .bg-card { background-color: var(--color-card-dark); }
@@ -84,7 +101,7 @@
         .dark .text-main { color: var(--color-text-dark); }
         .dark .text-heading { color: #F1F5F9; }
         .dark .border-main { border-color: var(--color-border-dark); }
-        .dark .bg-app { background-color: transparent; } /* NAYA: Transparent taaki background dikhe */
+        .dark .bg-app { background-color: transparent; }
 
         .text-primary { color: var(--color-primary); }
         .bg-primary { background-color: var(--color-primary); }
@@ -127,14 +144,17 @@
         
         /* --- NAYA: Profile & More Dropdown --- */
         .dropdown-menu {
-            display: none; /* FIX: JS se control hoga */
+            display: none;
             position: absolute;
             top: 100%;
             right: 0;
             margin-top: 0.5rem;
             width: 200px;
         }
-        /* FIX: Hover logic hata di gayi hai */
+        .dropdown-toggle:hover + .dropdown-menu,
+        .dropdown-menu:hover {
+            display: block;
+        }
 
 
         /* Form Inputs */
@@ -282,6 +302,32 @@
             opacity: 1;
         }
         
+        /* NAYA: Platform Marquee (Request) */
+        .platform-marquee-inner {
+            display: flex;
+            width: 300%; /* Zyada items hain, isliye width zyada */
+            animation: scroll-x 60s linear infinite; /* Speed thodi dheemi */
+        }
+        .platform-logo-text {
+            width: auto;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.5rem 1.5rem;
+            margin: 0 0.5rem;
+            border-radius: 0.375rem;
+            background-color: var(--color-card-light);
+            border: 1px solid var(--color-border-light);
+            font-weight: 500;
+            color: var(--text-main);
+        }
+        .dark .platform-logo-text {
+            background-color: var(--color-card-dark);
+            border-color: var(--color-border-dark);
+            color: var(--color-text-dark);
+        }
+        
         /* NAYA: Homepage Scroll Animation */
         .animate-on-scroll {
             opacity: 0;
@@ -346,225 +392,92 @@
             margin-bottom: 1rem;
             color: var(--text-main);
         }
-
-        /* ===== NAYA: Rainbow Background Styles ===== */
-        .rainbow-background-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            z-index: -10;
-            pointer-events: none;
-            overflow: hidden;
-            background-color: var(--color-bg-light); /* Light mode bg */
-        }
-        .dark .rainbow-background-container {
-             background-color: var(--color-bg-dark); /* Dark mode bg */
-        }
         
-        .rainbow {
-            height: 100vh;
-            width: 0;
-            top: 0;
-            position: absolute;
-            transform: rotate(10deg);
-            transform-origin: top right;
+        /* NAYA: Client Card (Request) */
+        .client-profile-card {
+            background-color: var(--color-card-light);
+            border: 1px solid var(--color-border-light);
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.2s ease-out;
         }
-        .h {
-            box-shadow: 0 0 50vh 40vh white;
-            width: 100vw;
-            height: 0;
-            bottom: 0;
-            left: 0;
-            position: absolute;
-            z-index: 2;
+        .dark .client-profile-card {
+            background-color: var(--color-card-dark);
+            border-color: var(--color-border-dark);
         }
-        .v {
-            box-shadow: 0 0 35vw 25vw white;
-            width: 0;
-            height: 100vh;
-            bottom: 0;
-            left: 0;
-            position: absolute;
-            z-index: 2;
+        .client-profile-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.07);
         }
-        @keyframes slide {
-            from { right: -25vw; }
-            to { right: 125vw; }
-        }
-
-        /* NAYA: Compiled SASS Loop (1-25) */
-        .rainbow:nth-child(1) {
-            box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(232 121 249), 0 0 50px 25px rgb(96 165 250), 50px 0 50px 25px rgb(94 234 212), 130px 0 80px 40px white;
-            animation: 44.1s linear infinite slide;
-            animation-delay: -1.8s;
-        }
-        .rainbow:nth-child(2) {
-            box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(232 121 249), 0 0 50px 25px rgb(94 234 212), 50px 0 50px 25px rgb(96 165 250), 130px 0 80px 40px white;
-            animation: 43.2s linear infinite slide;
-            animation-delay: -3.6s;
-        }
-        .rainbow:nth-child(3) {
-            box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(94 234 212), 0 0 50px 25px rgb(232 121 249), 50px 0 50px 25px rgb(96 165 250), 130px 0 80px 40px white;
-            animation: 42.3s linear infinite slide;
-            animation-delay: -5.4s;
-        }
-        .rainbow:nth-child(4) {
-            box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(94 234 212), 0 0 50px 25px rgb(96 165 250), 50px 0 50px 25px rgb(232 121 249), 130px 0 80px 40px white;
-            animation: 41.4s linear infinite slide;
-            animation-delay: -7.2s;
-        }
-        .rainbow:nth-child(5) {
-            box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(96 165 250), 0 0 50px 25px rgb(94 234 212), 50px 0 50px 25px rgb(232 121 249), 130px 0 80px 40px white;
-            animation: 40.5s linear infinite slide;
-            animation-delay: -9s;
-        }
-        .rainbow:nth-child(6) {
-            box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(96 165 250), 0 0 50px 25px rgb(232 121 249), 50px 0 50px 25px rgb(94 234 212), 130px 0 80px 40px white;
-            animation: 39.6s linear infinite slide;
-            animation-delay: -10.8s;
-        }
-        .rainbow:nth-child(7) {
-            box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(232 121 249), 0 0 50px 25px rgb(96 165 250), 50px 0 50px 25px rgb(94 234 212), 130px 0 80px 40px white;
-            animation: 38.7s linear infinite slide;
-            animation-delay: -12.6s;
-        }
-        .rainbow:nth-child(8) {
-            box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(232 121 249), 0 0 50px 25px rgb(94 234 212), 50px 0 50px 25px rgb(96 165 250), 130px 0 80px 40px white;
-            animation: 37.8s linear infinite slide;
-            animation-delay: -14.4s;
-        }
-        .rainbow:nth-child(9) {
-            box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(94 234 212), 0 0 50px 25px rgb(232 121 249), 50px 0 50px 25px rgb(96 165 250), 130px 0 80px 40px white;
-            animation: 36.9s linear infinite slide;
-            animation-delay: -16.2s;
-        }
-        .rainbow:nth-child(10) {
-            box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(94 234 212), 0 0 50px 25px rgb(96 165 250), 50px 0 50px 25px rgb(232 121 249), 130px 0 80px 40px white;
-            animation: 36s linear infinite slide;
-            animation-delay: -18s;
-        }
-        .rainbow:nth-child(11) {
-            box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(96 165 250), 0 0 50px 25px rgb(94 234 212), 50px 0 50px 25px rgb(232 121 249), 130px 0 80px 40px white;
-            animation: 35.1s linear infinite slide;
-            animation-delay: -19.8s;
-        }
-        .rainbow:nth-child(12) {
-            box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(96 165 250), 0 0 50px 25px rgb(232 121 249), 50px 0 50px 25px rgb(94 234 212), 130px 0 80px 40px white;
-            animation: 34.2s linear infinite slide;
-            animation-delay: -21.6s;
-        }
-        .rainbow:nth-child(13) {
-            box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(232 121 249), 0 0 50px 25px rgb(96 165 250), 50px 0 50px 25px rgb(94 234 212), 130px 0 80px 40px white;
-            animation: 33.3s linear infinite slide;
-            animation-delay: -23.4s;
-        }
-        .rainbow:nth-child(14) {
-            box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(232 121 249), 0 0 50px 25px rgb(94 234 212), 50px 0 50px 25px rgb(96 165 250), 130px 0 80px 40px white;
-            animation: 32.4s linear infinite slide;
-            animation-delay: -25.2s;
-        }
-        .rainbow:nth-child(15) {
-            box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(94 234 212), 0 0 50px 25px rgb(232 121 249), 50px 0 50px 25px rgb(96 165 250), 130px 0 80px 40px white;
-            animation: 31.5s linear infinite slide;
-            animation-delay: -27s;
-        }
-        .rainbow:nth-child(16) {
-            box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(94 234 212), 0 0 50px 25px rgb(96 165 250), 50px 0 50px 25px rgb(232 121 249), 130px 0 80px 40px white;
-            animation: 30.6s linear infinite slide;
-            animation-delay: -28.8s;
-        }
-        .rainbow:nth-child(17) {
-            box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(96 165 250), 0 0 50px 25px rgb(94 234 212), 50px 0 50px 25px rgb(232 121 249), 130px 0 80px 40px white;
-            animation: 29.7s linear infinite slide;
-            animation-delay: -30.6s;
-        }
-        .rainbow:nth-child(18) {
-            box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(96 165 250), 0 0 50px 25px rgb(232 121 249), 50px 0 50px 25px rgb(94 234 212), 130px 0 80px 40px white;
-            animation: 28.8s linear infinite slide;
-            animation-delay: -32.4s;
-        }
-        .rainbow:nth-child(19) {
-            box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(232 121 249), 0 0 50px 25px rgb(96 165 250), 50px 0 50px 25px rgb(94 234 212), 130px 0 80px 40px white;
-            animation: 27.9s linear infinite slide;
-            animation-delay: -34.2s;
-        }
-        .rainbow:nth-child(20) {
-            box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(232 121 249), 0 0 50px 25px rgb(94 234 212), 50px 0 50px 25px rgb(96 165 250), 130px 0 80px 40px white;
-            animation: 27s linear infinite slide;
-            animation-delay: -36s;
-        }
-        .rainbow:nth-child(21) {
-            box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(94 234 212), 0 0 50px 25px rgb(232 121 249), 50px 0 50px 25px rgb(96 165 250), 130px 0 80px 40px white;
-            animation: 26.1s linear infinite slide;
-            animation-delay: -37.8s;
-        }
-        .rainbow:nth-child(22) {
-            box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(94 234 212), 0 0 50px 25px rgb(96 165 250), 50px 0 50px 25px rgb(232 121 249), 130px 0 80px 40px white;
-            animation: 25.2s linear infinite slide;
-            animation-delay: -39.6s;
-        }
-        .rainbow:nth-child(23) {
-            box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(96 165 250), 0 0 50px 25px rgb(94 234 212), 50px 0 50px 25px rgb(232 121 249), 130px 0 80px 40px white;
-            animation: 24.3s linear infinite slide;
-            animation-delay: -41.4s;
-        }
-        .rainbow:nth-child(24) {
-            box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(96 165 250), 0 0 50px 25px rgb(232 121 249), 50px 0 50px 25px rgb(94 234 212), 130px 0 80px 40px white;
-            animation: 23.4s linear infinite slide;
-            animation-delay: -43.2s;
-        }
-        .rainbow:nth-child(25) {
-            box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(232 121 249), 0 0 50px 25px rgb(96 165 250), 50px 0 50px 25px rgb(94 234 212), 130px 0 80px 40px white;
-            animation: 22.5s linear infinite slide;
-            animation-delay: -45s;
-        }
-        /* ===== END Rainbow Background Styles ===== */
-
 
     </style>
 </head>
 <body class="bg-app">
 
-    <!-- NAYA: Rainbow Background -->
-    <div class="rainbow-background-container">
-        <div class="rainbow"></div>
-        <div class="rainbow"></div>
-        <div class="rainbow"></div>
-        <div class="rainbow"></div>
-        <div class="rainbow"></div>
-        <div class="rainbow"></div>
-        <div class="rainbow"></div>
-        <div class="rainbow"></div>
-        <div class="rainbow"></div>
-        <div class="rainbow"></div>
-        <div class="rainbow"></div>
-        <div class="rainbow"></div>
-        <div class="rainbow"></div>
-        <div class="rainbow"></div>
-        <div class="rainbow"></div>
-        <div class="rainbow"></div>
-        <div class="rainbow"></div>
-        <div class="rainbow"></div>
-        <div class="rainbow"></div>
-        <div class="rainbow"></div>
-        <div class="rainbow"></div>
-        <div class="rainbow"></div>
-        <div class="rainbow"></div>
-        <div class="rainbow"></div>
-        <div class="rainbow"></div>
-        <div class="h"></div>
-        <div class="v"></div>
-    </div>
+    <!-- NAYA: Coding (Matrix) Background -->
+    <canvas id="coding-bg"></canvas>
     
     <!-- Message Box (Alert/Error) -->
     <div id="message-box" class="hidden fixed top-5 right-5 z-[100] p-4 rounded-lg shadow-lg">
         <span id="message-text"></span>
     </div>
 
-    <!-- ===== FIX: Login View Poori Tarah Hata Diya Gaya Hai ===== -->
-    
+    <!-- ===== NAYA: Logged-Out View (Login/Sign Up) (FIX: Ab default hidden hai) ===== -->
+    <div id="logged-out-view" class="hidden">
+        <div class="flex flex-col items-center justify-center min-h-screen px-4">
+            <h1 class="text-3xl font-bold text-heading mb-6">
+                R.S Films <span class="text-primary">Group</span>
+            </h1>
+            
+            <!-- Login/Sign Up Card -->
+            <div class="w-full max-w-md bg-card border border-main rounded-lg shadow-lg p-6">
+                <!-- Tabs -->
+                <div class="flex border-b border-main mb-6">
+                    <button id="tab-login" class="flex-1 py-2 font-semibold text-primary border-b-2 border-primary">Login</button>
+                    <button id="tab-signup" class="flex-1 py-2 font-semibold text-main">Sign Up</button>
+                </div>
+                
+                <!-- Login Form -->
+                <form id="page-login" class="space-y-4">
+                    <h2 class="text-xl font-semibold text-heading mb-4">Platform par Login Karein</h2>
+                    <div>
+                        <label class="form-label" for="login-email">Email</label>
+                        <input class="form-input" type="email" id="login-email" required value="user@rsfilmsgroup.com">
+                    </div>
+                    <div>
+                        <label class="form-label" for="login-password">Password</label>
+                        <input class="form-input" type="password" id="login-password" required value="password123">
+                    </div>
+                    <div class="pt-2">
+                        <button type="submit" class="btn btn-primary w-full">Login</button>
+                    </div>
+                </form>
+                
+                <!-- Sign Up Form (Hidden by default) -->
+                <form id="page-signup" class="space-y-4 hidden">
+                    <h2 class="text-xl font-semibold text-heading mb-4">Naya Account Banayein</h2>
+                    <div>
+                        <label class="form-label" for="signup-name">Aapka Naam</label>
+                        <input class="form-input" type="text" id="signup-name" required>
+                    </div>
+                    <div>
+                        <label class="form-label" for="signup-email">Email</label>
+                        <input class="form-input" type="email" id="signup-email" required>
+                    </div>
+                    <div>
+                        <label class="form-label" for="signup-password">Password</label>
+                        <input class="form-input" type="password" id="signup-password" minlength="6" required>
+                    </div>
+                    <div class="pt-2">
+                        <button type="submit" class="btn btn-primary w-full">Create Account</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- ===== NAYA: Logged-In View (Main Website) (FIX: Ab default visible hai) ===== -->
     <div id="logged-in-view">
         <!-- ===== NAYA: Top Navigation Header ===== -->
@@ -585,7 +498,7 @@
                         <a class="nav-link" data-page="page-mcn" onclick="showPage('page-mcn')">MCN</a>
                         <a class="nav-link" data-page="page-chat" onclick="showPage('page-chat')">✨ AI Chat</a>
                         
-                        <!-- NAYA: More Dropdown (FIXED) -->
+                        <!-- NAYA: More Dropdown -->
                         <div class="relative">
                             <button class="nav-link dropdown-toggle flex items-center">
                                 Aur Dekhein <ion-icon name="chevron-down-outline" class="ml-1"></ion-icon>
@@ -618,7 +531,7 @@
                             <ion-icon name="moon-outline" class="text-xl"></ion-icon>
                         </button>
                         
-                        <!-- NAYA: Profile Button & Dropdown (FIXED) -->
+                        <!-- NAYA: Profile Button & Dropdown -->
                         <div class="relative">
                             <button id="profile-button" class="dropdown-toggle p-2 rounded-full text-main hover:bg-gray-200 dark:hover:bg-gray-700">
                                 <ion-icon name="person-circle-outline" class="text-2xl"></ion-icon>
@@ -633,7 +546,9 @@
                                     <a href="#" class="nav-link block px-4 py-2 text-sm !border-none !font-normal" data-page="page-profile" onclick="showPage('page-profile')">
                                         My Profile
                                     </a>
-                                    <!-- FIX: Sign Out button hata diya gaya hai -->
+                                    <a href="#" id="sign-out-btn" class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                        Sign Out
+                                    </a>
                                 </nav>
                             </div>
                         </div>
@@ -722,6 +637,53 @@
                             <div class="client-logo"><img src="https://placehold.co/150x50/CBD5E1/334155?text=Creator+Co" alt="Client 4"></div>
                             <div class="client-logo"><img src="https://placehold.co/150x50/CBD5E1/334155?text=Studio" alt="Client 5"></div>
                             <div class="client-logo"><img src="https://placehold.co/150x50/CBD5E1/334155?text=Big+Brand" alt="Client 6"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- NAYA: Platform Partners (Scrolling Marquee) (Aapka Request) -->
+                <div class="my-24 animate-on-scroll">
+                    <h2 class="text-2xl font-bold text-heading text-center mb-8">Humare Platform Partners</h2>
+                    <div class="w-full inline-flex flex-nowrap overflow-hidden [mask-image:_linear-gradient(to_right,transparent_0,_black_128px,_black_calc(100%-128px),transparent_100%)]">
+                        <div class="platform-marquee-inner">
+                            <!-- Platforms (Set 1) -->
+                            <div class="platform-logo-text">Amazon Music</div>
+                            <div class="platform-logo-text">Anghami</div>
+                            <div class="platform-logo-text">Audiomack</div>
+                            <div class="platform-logo-text">AWA</div>
+                            <div class="platform-logo-text">Gaana</div>
+                            <div class="platform-logo-text">iHeartRadio</div>
+                            <div class="platform-logo-text">JioSaavn</div>
+                            <div class="platform-logo-text">JOOX</div>
+                            <div class="platform-logo-text">KKBOX</div>
+                            <div class="platform-logo-text">Meta</div>
+                            <div class="platform-logo-text">NetEase</div>
+                            <div class="platform-logo-text">Pandora</div>
+                            <div class="platform-logo-text">Qobuz</div>
+                            <div class="platform-logo-text">SoundCloud</div>
+                            <div class="platform-logo-text">Tencent Music</div>
+                            <div class="platform-logo-text">TIDAL</div>
+                            <div class="platform-logo-text">TikTok</div>
+                            <div class="platform-logo-text">YouTube Music</div>
+                            <!-- Platforms (Set 2 - for seamless loop) -->
+                            <div class="platform-logo-text">Amazon Music</div>
+                            <div class="platform-logo-text">Anghami</div>
+                            <div class="platform-logo-text">Audiomack</div>
+                            <div class="platform-logo-text">AWA</div>
+                            <div class="platform-logo-text">Gaana</div>
+                            <div class="platform-logo-text">iHeartRadio</div>
+                            <div class="platform-logo-text">JioSaavn</div>
+                            <div class="platform-logo-text">JOOX</div>
+                            <div class="platform-logo-text">KKBOX</div>
+                            <div class="platform-logo-text">Meta</div>
+                            <div class="platform-logo-text">NetEase</div>
+                            <div class="platform-logo-text">Pandora</div>
+                            <div class="platform-logo-text">Qobuz</div>
+                            <div class="platform-logo-text">SoundCloud</div>
+                            <div class="platform-logo-text">Tencent Music</div>
+                            <div class="platform-logo-text">TIDAL</div>
+                            <div class="platform-logo-text">TikTok</div>
+                            <div class="platform-logo-text">YouTube Music</div>
                         </div>
                     </div>
                 </div>
@@ -960,12 +922,94 @@
                 </div>
             </section>
             
-            <!-- ===== Page: Music Distribution (AI Feature) ===== -->
+            <!-- ===== Page: Music Distribution (AI Feature + NAYI LIST) ===== -->
             <section id="page-music" class="page-section">
                 <h1 class="text-3xl font-bold text-heading mb-6">Music Distribution</h1>
+                
+                <!-- NAYA: Platform List (Aapka Request) -->
+                <div class="mb-12">
+                    <h2 class="text-2xl font-semibold text-heading mb-4">Hum In Sabhi Platforms Par Distribute Karte Hain</h2>
+                    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">7 Digital</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">7 Digital (Rights Registry)</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">ACR Cloud (Public Registry)</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">AGEDI</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">AllSaints Music Group</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">Amazon Digital Services Inc.</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">AMI Entertainment</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">Anghami</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">Audible Magic</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">Audible Magic (Compliance)</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">Audible Magic (Music Rights ID)</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">Audiomack (Africa Ad-Supported)</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">Audiomack (Premium Full Catalog)</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">AWA</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">Beat</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">BMAT</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">BPI</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">Bugs Corporation</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">ClicknClear</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">Equinox</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">Fizy</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">FLO</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">FreshPlanet / SongPop</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">Gaana</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">Genie Music</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">Gracenote</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">HD Tracks</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">iHeartRadio</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">Images in Motion</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">iMusica</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">Jaxsta</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">JioSaavn (WW Rights)</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">JOOX</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">Kakao M</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">Kantar</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">KKBOX</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">Kuack</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">Library Ideas / Freegal</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">Line</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">Managed Media</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">Meta</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">Mixcloud</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">Music Story</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">MyMP3Pool</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">NCT</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">NetEase</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">oMusic</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">Pandora</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">Peloton</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">Pex (Public Registry)</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">Phononet</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">ProStudioMasters.com Inc.</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">Qishui Yinyue (Soda Music)</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">Qobuz</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">Red Touch Media</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">Rocksmith (Ubisoft)</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">ROKK</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">RX Music</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">SoundCloud Fingerprinting</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">SoundCloud Go Ad-Supported</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">SoundExchange</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">Soundmouse</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">TCAT Timed Release Validation</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">TDC Play</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">Tencent Music</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">TIDAL</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">TikTok (Audio Library)</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">Touchtunes</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">Trebel</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">Tuned Global</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">VL Group</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">Volley (Song Quiz)</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">YG Plus</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">YouTube Art Tracks & Music Videos</span>
+                        <span class="bg-card border border-main text-main text-sm p-2 rounded shadow-sm">YouTube Content ID</span>
+                    </div>
+                </div>
+
                 <div class="bg-card border border-main rounded-lg shadow-lg p-6 max-w-2xl mx-auto">
                     <h3 class="text-xl font-semibold text-heading mb-4">Music Distribution Form</h3>
-                    
                     <form id="music-dist-form" class="space-y-4">
                         <div>
                             <label class="form-label" for="artist-name">Artist Name</label>
@@ -1293,47 +1337,90 @@
                 </div>
             </section>
 
-            <!-- ===== NAYA: Page Clients (EXPANDED) ===== -->
+            <!-- ===== NAYA: Page Clients (REDESIGNED with YouTube Links) (Aapka Request) ===== -->
             <section id="page-clients" class="page-section">
                 <h1 class="text-3xl font-bold text-heading mb-6">Humare Clients</h1>
                 <p class="text-main mb-8 max-w-2xl">Humein garv hai ki humne in behtareen creators aur brands ke saath kaam kiya hai. Inki success hi humari success hai.</p>
-                <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
-                    <!-- Client Logos (EXPANDED) -->
-                    <div class="bg-card border border-main rounded-lg p-6 flex items-center justify-center h-24 shadow-sm">
-                        <img src="https://placehold.co/150x50/CBD5E1/334155?text=Client+Logo+1" alt="Client Logo 1" class="h-8">
+                <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                    <!-- Client Card 1 -->
+                    <div class="client-profile-card">
+                        <img src="https://placehold.co/100x100/EF4444/FFFFFF?text=T" alt="Client Logo" class="w-24 h-24 rounded-full mx-auto mb-4 shadow-lg">
+                        <h3 class="text-xl font-semibold text-heading">T-Series</h3>
+                        <p class="text-main font-medium mb-3">200M+ Subscribers</p>
+                        <a href="https://www.youtube.com/user/tseries" target="_blank" class="btn btn-secondary w-full text-sm">
+                            <ion-icon name="logo-youtube" class="mr-2 text-red-600"></ion-icon>
+                            View Channel
+                        </a>
                     </div>
-                    <div class="bg-card border border-main rounded-lg p-6 flex items-center justify-center h-24 shadow-sm">
-                        <img src="https://placehold.co/150x50/CBD5E1/334155?text=Client+Logo+2" alt="Client Logo 2" class="h-8">
+                    <!-- Client Card 2 -->
+                    <div class="client-profile-card">
+                        <img src="https://placehold.co/100x100/F59E0B/FFFFFF?text=S" alt="Client Logo" class="w-24 h-24 rounded-full mx-auto mb-4 shadow-lg">
+                        <h3 class="text-xl font-semibold text-heading">Speed Records</h3>
+                        <p class="text-main font-medium mb-3">40M+ Subscribers</p>
+                        <a href="https://www.youtube.com/user/speedrecords" target="_blank" class="btn btn-secondary w-full text-sm">
+                            <ion-icon name="logo-youtube" class="mr-2 text-red-600"></ion-icon>
+                            View Channel
+                        </a>
                     </div>
-                    <div class="bg-card border border-main rounded-lg p-6 flex items-center justify-center h-24 shadow-sm">
-                        <img src="https://placehold.co/150x50/CBD5E1/334155?text=Client+Logo+3" alt="Client Logo 3" class="h-8">
+                    <!-- Client Card 3 -->
+                    <div class="client-profile-card">
+                        <img src="https://placehold.co/100x100/10B981/FFFFFF?text=W" alt="Client Logo" class="w-24 h-24 rounded-full mx-auto mb-4 shadow-lg">
+                        <h3 class="text-xl font-semibold text-heading">White Hill Music</h3>
+                        <p class="text-main font-medium mb-3">25M+ Subscribers</p>
+                        <a href="https://www.youtube.com/user/WhiteHillProduction" target="_blank" class="btn btn-secondary w-full text-sm">
+                            <ion-icon name="logo-youtube" class="mr-2 text-red-600"></ion-icon>
+                            View Channel
+                        </a>
                     </div>
-                    <div class="bg-card border border-main rounded-lg p-6 flex items-center justify-center h-24 shadow-sm">
-                        <img src="https://placehold.co/150x50/CBD5E1/334155?text=Client+Logo+4" alt="Client Logo 4" class="h-8">
+                    <!-- Client Card 4 -->
+                    <div class="client-profile-card">
+                        <img src="https://placehold.co/100x100/3B82F6/FFFFFF?text=V" alt="Client Logo" class="w-24 h-24 rounded-full mx-auto mb-4 shadow-lg">
+                        <h3 class="text-xl font-semibold text-heading">Tech Vlogger</h3>
+                        <p class="text-main font-medium mb-3">5M+ Subscribers</p>
+                        <a href="https://www.youtube.com" target="_blank" class="btn btn-secondary w-full text-sm">
+                            <ion-icon name="logo-youtube" class="mr-2 text-red-600"></ion-icon>
+                            View Channel
+                        </a>
                     </div>
-                    <div class="bg-card border border-main rounded-lg p-6 flex items-center justify-center h-24 shadow-sm">
-                        <img src="https://placehold.co/150x50/CBD5E1/334155?text=Client+Logo+5" alt="Client Logo 5" class="h-8">
+                    <!-- Client Card 5 -->
+                    <div class="client-profile-card">
+                        <img src="https://placehold.co/100x100/6366F1/FFFFFF?text=DJ" alt="Client Logo" class="w-24 h-24 rounded-full mx-auto mb-4 shadow-lg">
+                        <h3 class="text-xl font-semibold text-heading">DJ Raaj</h3>
+                        <p class="text-main font-medium mb-3">500k+ Subscribers</p>
+                        <a href="https://www.youtube.com" target="_blank" class="btn btn-secondary w-full text-sm">
+                            <ion-icon name="logo-youtube" class="mr-2 text-red-600"></ion-icon>
+                            View Channel
+                        </a>
                     </div>
-                    <div class="bg-card border border-main rounded-lg p-6 flex items-center justify-center h-24 shadow-sm">
-                        <img src="https://placehold.co/150x50/CBD5E1/334155?text=Client+Logo+6" alt="Client Logo 6" class="h-8">
+                    <!-- Client Card 6 -->
+                    <div class="client-profile-card">
+                        <img src="https://placehold.co/100x100/EC4899/FFFFFF?text=SK" alt="Client Logo" class="w-24 h-24 rounded-full mx-auto mb-4 shadow-lg">
+                        <h3 class="text-xl font-semibold text-heading">SK Films</h3>
+                        <p class="text-main font-medium mb-3">1M+ Subscribers</p>
+                        <a href="https://www.youtube.com" target="_blank" class="btn btn-secondary w-full text-sm">
+                            <ion-icon name="logo-youtube" class="mr-2 text-red-600"></ion-icon>
+                            View Channel
+                        </a>
                     </div>
-                    <div class="bg-card border border-main rounded-lg p-6 flex items-center justify-center h-24 shadow-sm">
-                        <img src="https://placehold.co/150x50/CBD5E1/334155?text=Client+Logo+7" alt="Client Logo 7" class="h-8">
+                    <!-- Client Card 7 -->
+                    <div class="client-profile-card">
+                        <img src="https://placehold.co/100x100/8B5CF6/FFFFFF?text=C" alt="Client Logo" class="w-24 h-24 rounded-full mx-auto mb-4 shadow-lg">
+                        <h3 class="text-xl font-semibold text-heading">Cooking Creator</h3>
+                        <p class="text-main font-medium mb-3">2M+ Subscribers</p>
+                        <a href="https://www.youtube.com" target="_blank" class="btn btn-secondary w-full text-sm">
+                            <ion-icon name="logo-youtube" class="mr-2 text-red-600"></ion-icon>
+                            View Channel
+                        </a>
                     </div>
-                    <div class="bg-card border border-main rounded-lg p-6 flex items-center justify-center h-24 shadow-sm">
-                        <img src="https://placehold.co/150x50/CBD5E1/334155?text=Client+Logo+8" alt="Client Logo 8" class="h-8">
-                    </div>
-                    <div class="bg-card border border-main rounded-lg p-6 flex items-center justify-center h-24 shadow-sm">
-                        <img src="https://placehold.co/150x50/CBD5E1/334155?text=Client+Logo+9" alt="Client Logo 9" class="h-8">
-                    </div>
-                    <div class="bg-card border border-main rounded-lg p-6 flex items-center justify-center h-24 shadow-sm">
-                        <img src="https://placehold.co/150x50/CBD5E1/334155?text=Client+Logo+10" alt="Client Logo 10" class="h-8">
-                    </div>
-                    <div class="bg-card border border-main rounded-lg p-6 flex items-center justify-center h-24 shadow-sm">
-                        <img src="https://placehold.co/150x50/CBD5E1/334155?text=Client+Logo+11" alt="Client Logo 11" class="h-8">
-                    </div>
-                    <div class="bg-card border border-main rounded-lg p-6 flex items-center justify-center h-24 shadow-sm">
-                        <img src="https://placehold.co/150x50/CBD5E1/334155?text=Client+Logo+12" alt="Client Logo 12" class="h-8">
+                    <!-- Client Card 8 -->
+                    <div class="client-profile-card">
+                        <img src="https://placehold.co/100x100/334155/FFFFFF?text=G" alt="Client Logo" class="w-24 h-24 rounded-full mx-auto mb-4 shadow-lg">
+                        <h3 class="text-xl font-semibold text-heading">Gaming Channel</h3>
+                        <p class="text-main font-medium mb-3">8M+ Subscribers</p>
+                        <a href="https://www.youtube.com" target="_blank" class="btn btn-secondary w-full text-sm">
+                            <ion-icon name="logo-youtube" class="mr-2 text-red-600"></ion-icon>
+                            View Channel
+                        </a>
                     </div>
                 </div>
             </section>
@@ -1490,11 +1577,12 @@
     </div>
     
     <!-- 
-      FIX: Global Scripts (Navigation + Mobile Menu FIX + Dropdown FIX)
+      FIX: Global Scripts (Navigation + Mobile Menu FIX)
     -->
     <script>
         /**
          * FIX: Page Navigation (100% WORKING)
+         * Is function ko global 'window' object par attach kiya gaya hai.
          */
         window.showPage = function(pageId) {
             // Sabhi pages ko hide karo
@@ -1522,6 +1610,7 @@
 
         /*
          * FIX: Mobile Menu Button (100% WORKING)
+         * Isko global scope mein rakha gaya hai taaki yeh hamesha kaam kare.
          */
         document.addEventListener('DOMContentLoaded', () => {
             const mobileMenuBtn = document.getElementById('mobile-menu-btn');
@@ -1532,32 +1621,6 @@
                 });
             }
         });
-
-        /*
-         * NAYA: Dropdown Fix (Profile & More)
-         * Click-based, reliable JS.
-         */
-        document.addEventListener('click', function(e) {
-            // Check if the click is on a dropdown toggle button
-            const isDropdownButton = e.target.closest('.dropdown-toggle');
-            
-            // Close all open dropdowns
-            document.querySelectorAll('.dropdown-menu').forEach(menu => {
-                // If the click is NOT inside the current menu AND NOT on its toggle button
-                if (!menu.previousElementSibling.contains(e.target) && !menu.contains(e.target)) {
-                    menu.style.display = 'none';
-                }
-            });
-
-            // If a dropdown button was clicked, toggle *its* menu
-            if (isDropdownButton) {
-                const menu = isDropdownButton.nextElementSibling;
-                if (menu && menu.classList.contains('dropdown-menu')) {
-                    menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
-                }
-            }
-        });
-
 
         /*
          * NAYA: Blog Detail Page Logic
@@ -1640,7 +1703,7 @@
     </script>
     
     <!-- 
-      NAYA: Gemini AI Logic, Simulated Auth, Animations (Module script mein)
+      NAYA: Gemini AI Logic, Simulated Auth, Coding BG & Animations (Module script mein)
     -->
     <script type="module">
         // Global variables
@@ -1648,6 +1711,8 @@
         let currentTestimonialSlide = 0;
 
         // DOM Elements
+        const loggedInView = document.getElementById('logged-in-view');
+        const loggedOutView = document.getElementById('logged-out-view');
         const profileEmail = document.getElementById('profile-email');
         const profileUserEmailInput = document.getElementById('profile-user-email');
 
@@ -1680,7 +1745,81 @@
             }
         }
 
-        // ===== FIX: Simulated Auth Logic Hata Diya Gaya Hai =====
+        // ===== NAYA: Simulated Auth Logic (No Firebase) =====
+        function initAuthSimulation() {
+            const loginForm = document.getElementById('page-login');
+            const signupForm = document.getElementById('page-signup');
+            const signOutBtn = document.getElementById('sign-out-btn');
+            
+            // Login/Sign Up Tabs
+            const tabLogin = document.getElementById('tab-login');
+            const tabSignup = document.getElementById('tab-signup');
+            const pageLogin = document.getElementById('page-login');
+            const pageSignup = document.getElementById('page-signup');
+
+            if (!tabLogin) return; // Agar login page active nahi hai (rare case)
+
+            tabLogin.addEventListener('click', () => {
+                tabLogin.classList.add('text-primary', 'border-primary');
+                tabSignup.classList.remove('text-primary', 'border-primary');
+                pageLogin.classList.remove('hidden');
+                pageSignup.classList.add('hidden');
+            });
+            tabSignup.addEventListener('click', () => {
+                tabSignup.classList.add('text-primary', 'border-primary');
+                tabLogin.classList.remove('text-primary', 'border-primary');
+                pageSignup.classList.remove('hidden');
+                pageLogin.classList.add('hidden');
+            });
+
+            // Sign Up Form
+            signupForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const button = signupForm.querySelector('button');
+                button.dataset.originalText = "Create Account";
+                toggleButtonSpinner(button, true);
+
+                await new Promise(res => setTimeout(res, 500)); // Simulate network request
+
+                const email = document.getElementById('signup-email').value;
+                if(profileEmail) profileEmail.textContent = email;
+                if(profileUserEmailInput) profileUserEmailInput.value = email;
+
+                loggedInView.classList.remove('hidden');
+                loggedOutView.classList.add('hidden');
+                showMessage("Account successfully ban gaya!", true);
+                window.showPage('page-home'); // FIX: Use global function
+                toggleButtonSpinner(button, false);
+            });
+
+            // Login Form
+            loginForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const button = loginForm.querySelector('button');
+                button.dataset.originalText = "Login";
+                toggleButtonSpinner(button, true);
+
+                await new Promise(res => setTimeout(res, 500)); // Simulate network request
+                
+                const email = document.getElementById('login-email').value;
+                if(profileEmail) profileEmail.textContent = email;
+                if(profileUserEmailInput) profileUserEmailInput.value = email;
+
+                loggedInView.classList.remove('hidden');
+                loggedOutView.classList.add('hidden');
+                showMessage("Login successful!", true);
+                window.showPage('page-home'); // FIX: Use global function
+                toggleButtonSpinner(button, false);
+            });
+
+            // Sign Out Button
+            signOutBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                loggedInView.classList.add('hidden');
+                loggedOutView.classList.remove('hidden');
+                showMessage("Aap successfully sign out ho gaye hain.", true);
+            });
+        }
 
 
         // ===== NAYA: Gemini API Call Function =====
@@ -1913,8 +2052,60 @@
             });
         }
         
-        // ===== REMOVED: Coding Background Logic (Particles) =====
-        // initCodingBackground() function poori tarah hata diya gaya hai
+        // ===== NAYA: Coding Background Logic =====
+        function initCodingBackground() {
+            const canvas = document.getElementById('coding-bg');
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            
+            let width, height;
+            let drops;
+            const fontSize = 14;
+            const characters = "01";
+            
+            function resizeCanvas() {
+                width = canvas.width = window.innerWidth;
+                height = canvas.height = window.innerHeight;
+                
+                const columns = Math.floor(width / fontSize);
+                drops = [];
+                for (let x = 0; x < columns; x++) {
+                    drops[x] = Math.floor(Math.random() * height / fontSize);
+                }
+            }
+
+            function draw() {
+                const isDark = document.documentElement.classList.contains('dark');
+                
+                // Puraane frames ko fade karne ke liye
+                ctx.fillStyle = isDark ? 
+                    'rgba(11, 17, 32, 0.05)' : /* Dark mode fade */
+                    'rgba(241, 245, 249, 0.05)'; /* Light mode fade */
+                ctx.fillRect(0, 0, width, height);
+                
+                // Text color
+                ctx.fillStyle = isDark ? 
+                    '#34D399' : /* Dark mode text (Green) */
+                    '#BFDBFE'; /* Light mode text (Light Blue) */
+                ctx.font = fontSize + 'px Inter';
+
+                for (let i = 0; i < drops.length; i++) {
+                    const text = characters[Math.floor(Math.random() * characters.length)];
+                    ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                    
+                    // Drop ko neeche bhejein
+                    if (drops[i] * fontSize > height && Math.random() > 0.975) {
+                        drops[i] = 0; // Top par reset karein
+                    }
+                    drops[i]++;
+                }
+            }
+
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+            setInterval(draw, 50); // Animation speed (thoda slow, subtle effect ke liye)
+        }
         
         // ===== NAYA: Homepage Scroll Animation Logic =====
         function initScrollAnimations() {
@@ -1947,8 +2138,6 @@
             
             const slides = slider.querySelectorAll('.testimonial-slide');
             const dots = dotsContainer.querySelectorAll('.testimonial-dot');
-            if (slides.length === 0 || dots.length === 0) return; // Exit if no slides
-            
             const totalSlides = slides.length;
 
             function updateSlider(slideIndex) {
@@ -1960,7 +2149,7 @@
             }
 
             // Auto-play
-            setInterval(() => {
+            let autoPlayInterval = setInterval(() => {
                 currentTestimonialSlide = (currentTestimonialSlide + 1) % totalSlides;
                 updateSlider(currentTestimonialSlide);
             }, 5000); // Har 5 second mein slide change
@@ -1970,6 +2159,12 @@
                 dot.addEventListener('click', () => {
                     currentTestimonialSlide = index;
                     updateSlider(currentTestimonialSlide);
+                    // Reset interval
+                    clearInterval(autoPlayInterval);
+                    autoPlayInterval = setInterval(() => {
+                        currentTestimonialSlide = (currentTestimonialSlide + 1) % totalSlides;
+                        updateSlider(currentTestimonialSlide);
+                    }, 5000);
                 });
             });
         }
@@ -1989,32 +2184,27 @@
                     button.classList.add('active');
                     
                     const filter = button.dataset.filter;
+                    
+                    let bazaarVisible = false;
+                    let hireVisible = false;
 
                     // Filter Bazaar Items
                     bazaarItems.forEach(item => {
-                        if (filter === 'all' || filter === 'psd' || filter === 'lut') {
-                            if (filter === 'all' || item.dataset.category === filter) {
-                                item.style.display = 'block';
-                            } else {
-                                item.style.display = 'none';
-                            }
-                        } else {
-                            item.style.display = 'none'; // Hide all product items if filtering for pros
-                        }
+                        const isVisible = filter === 'all' || ['psd', 'lut'].includes(filter) && item.dataset.category === filter;
+                        item.style.display = isVisible ? 'block' : 'none';
+                        if(isVisible) bazaarVisible = true;
                     });
                     
                     // Filter Hire Items
                     hireItems.forEach(item => {
-                         if (filter === 'all' || filter === 'editor' || filter === 'designer') {
-                            if (filter === 'all' || item.dataset.category === filter) {
-                                item.style.display = 'block';
-                            } else {
-                                item.style.display = 'none';
-                            }
-                        } else {
-                            item.style.display = 'none'; // Hide all pro items if filtering for products
-                        }
+                        const isVisible = filter === 'all' || ['editor', 'designer'].includes(filter) && item.dataset.category === filter;
+                        item.style.display = isVisible ? 'block' : 'none';
+                        if(isVisible) hireVisible = true;
                     });
+                    
+                    // Show/hide headings
+                    document.querySelector('#bazaar-items').previousElementSibling.style.display = bazaarVisible ? 'block' : 'none';
+                    document.querySelector('#hire-items').previousElementSibling.style.display = hireVisible ? 'block' : 'none';
                 });
             });
         }
@@ -2030,14 +2220,15 @@
             
             updateThemeIcon(document.documentElement.classList.contains('dark')); // Initial check
             
-            // --- FIX: Auth Init Hata Diya Gaya Hai ---
+            // --- NAYA: Init Simulated Auth ---
+            initAuthSimulation();
             
             // --- NAYA: Init AI & Other Features ---
             initChatbot();
             initMusicFeatures();
             initMCNFeatures();
             initProfileForm();
-            // REMOVED: initCodingBackground(); call hata diya gaya hai
+            initCodingBackground();
             initScrollAnimations();
             initTestimonialSlider();
             initBazaarFilters();
