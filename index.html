@@ -1,15 +1,12 @@
 <!DOCTYPE html>
 <!-- 
-  VERSION: Full Structure with Roles & Dashboards
-  FEATURE: Implemented Public Sitemap Navigation (Header, Mega Menu).
-  FEATURE: Added new public pages/sections (Talent). Renamed Blog to Insights.
-  FEATURE: Implemented Multi-Role Login UI (Client, Artist, Manager, Admin).
-  FEATURE: Added Mock Dashboards for Client, Account Manager, Super Admin.
-  FEATURE: Enhanced Service Detail page loading via JS.
-  FEATURE: Retained all previous features (AI Chat, Bazaar, Forms, etc.).
-  FIX: Homepage (`page-home`) is now the default view after simulated login.
-  FIX: Added separate "Portal Login" button for logged-out state. Profile dropdown for logged-in state.
-  NOTE: Role-based permission sharing requires backend implementation.
+  VERSION: Full Structure with Roles & Dashboards (Major Fix)
+  FIX: Rewritten global dropdown logic. All menus (profile, services, more) are now click-based and close on outside click.
+  FIX: Fixed `showServiceDetail` error by calling `showPage` *before* accessing elements.
+  FIX: Added a "More" dropdown to the header navigation.
+  FIX: Added links for "AI Chat", "Bazaar", "Team", and "Clients" under the "More" dropdown to restore all original pages.
+  FEATURE: All original pages (`page-home`, `page-chat`, `page-bazaar`, `page-profile`, etc.) are confirmed to be present.
+  FEATURE: Multi-role login and dashboards (Client, Manager, Admin) are functioning as intended.
 -->
 <html lang="hi" class="scroll-smooth">
 <head>
@@ -41,7 +38,7 @@
             --color-primary-hover: #2563EB; /* blue-600 */
             --color-primary-light: rgba(59, 130, 246, 0.1); /* blue-500 with opacity */
         }
-
+        /* ... (Rest of the CSS is identical to the previous version) ... */
         /* --- Global Styles --- */
         body {
             font-family: 'Inter', sans-serif;
@@ -75,7 +72,7 @@
         .dark .bg-header { background-color: var(--color-header-dark); }
          @supports (backdrop-filter: blur(10px)) {
             .dark .bg-card { background-color: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); }
-            .dark .bg-header { background-color: rgba(30, 41, 59, 0.8); backdrop-filter: blur(10px); } /* Use card dark color for consistency */
+            .dark .bg-header { background-color: rgba(30, 41, 59, 0.8); backdrop-filter: blur(10px); }
          }
         .dark .text-main { color: var(--color-text-dark); }
         .dark .text-heading { color: #F1F5F9; } /* slate-100 */
@@ -127,19 +124,32 @@
         .nav-link:hover { color: var(--color-primary); }
         .nav-link.active { color: var(--color-primary); font-weight: 600; border-bottom-color: var(--color-primary); }
         
-        /* --- NAYA: Services Mega Menu --- */
-        .mega-menu {
-            display: none; position: absolute; top: 100%; left: 0; 
-            width: max-content; min-width: 400px; /* Adjust as needed */
+        /* --- NAYA: Services Mega Menu & Dropdown (FIX: JS Controlled) --- */
+        .mega-menu, .dropdown-menu {
+            display: none; /* Controlled by JS */
+            position: absolute; top: 100%;
             margin-top: 0.5rem; z-index: 50;
+            background-color: var(--color-card-light);
+            border: 1px solid var(--color-border-light);
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
         }
-        .group:hover .mega-menu { display: block; } /* Show on hover */
-
-        /* --- Profile & More Dropdown --- */
+        .dark .mega-menu, .dark .dropdown-menu {
+             background-color: var(--color-card-dark);
+             border-color: var(--color-border-dark);
+        }
+        .mega-menu {
+            left: 0; 
+            width: max-content; min-width: 400px;
+            overflow: hidden;
+        }
         .dropdown-menu {
-            display: none; position: absolute; top: 100%; right: 0;
-            margin-top: 0.5rem; width: 200px; z-index: 50;
+            right: 0;
+            width: 200px;
+            overflow: hidden;
         }
+        /* .group:hover .mega-menu { display: block; } */ /* FIX: Removed CSS hover */
+
 
         /* Form Inputs */
         .form-input, .form-select { /* Added form-select */
@@ -285,7 +295,7 @@
                 <div id="login-form-container" class="bg-card border border-main rounded-lg shadow-lg p-6 md:p-8">
                     <h2 class="text-2xl font-bold text-heading text-center mb-6">Portal Login</h2>
                     <form id="login-form" class="space-y-4">
-                        <!-- NAYA: Role Selector -->
+                        <!-- Role Selector -->
                         <div>
                             <label class="form-label" for="login-role">Login As:</label>
                             <select id="login-role" class="form-select" required>
@@ -338,7 +348,7 @@
 
         <!-- ===== Main Logged-In View ===== -->
         <div id="logged-in-view">
-            <!-- ===== Top Navigation Header (UPDATED) ===== -->
+            <!-- ===== Top Navigation Header (FIXED) ===== -->
             <header id="main-header" class="sticky top-0 z-50 w-full bg-header border-b border-main shadow-sm">
                 <div class="container mx-auto px-4">
                     <div class="flex justify-between items-center h-16">
@@ -351,12 +361,12 @@
                         <nav class="hidden lg:flex items-center space-x-1">
                             <a class="nav-link" data-page="page-home" onclick="showPage('page-home')">Home</a>
                             
-                            <!-- Services Mega Menu -->
-                            <div class="relative group">
-                                <button class="nav-link flex items-center">
+                            <!-- Services Mega Menu (FIX: JS Toggle) -->
+                            <div class="relative">
+                                <button class="nav-link flex items-center dropdown-toggle" data-target="services-menu">
                                     Services <ion-icon name="chevron-down-outline" class="ml-1"></ion-icon>
                                 </button>
-                                <div class="mega-menu bg-card border border-main rounded-lg shadow-lg overflow-hidden grid grid-cols-2 gap-4 p-4">
+                                <div id="services-menu" class="mega-menu grid grid-cols-2 gap-4 p-4">
                                     <div>
                                         <h3 class="text-sm font-semibold text-heading px-3 pb-2 border-b border-main mb-2">Music</h3>
                                         <a href="#" class="nav-link block !border-none !font-normal text-sm" onclick="showServiceDetail('music-distribution')">Global Music Distribution</a>
@@ -379,8 +389,34 @@
                             
                             <a class="nav-link" data-page="page-talent" onclick="showPage('page-talent')">Our Talent</a>
                             <a class="nav-link" data-page="page-portfolio" onclick="showPage('page-portfolio')">Portfolio</a>
-                            <a class="nav-link" data-page="page-blog" onclick="showPage('page-blog')">Insights</a> <!-- Renamed from Blog -->
+                            <a class="nav-link" data-page="page-blog" onclick="showPage('page-blog')">Insights</a>
                             <a class="nav-link" data-page="page-contact" onclick="showPage('page-contact')">Contact</a>
+
+                             <!-- NAYA: More Dropdown (FIX: JS Toggle) -->
+                             <div class="relative">
+                                <button class="nav-link flex items-center dropdown-toggle" data-target="more-menu">
+                                    More <ion-icon name="chevron-down-outline" class="ml-1"></ion-icon>
+                                </button>
+                                <div id="more-menu" class="dropdown-menu">
+                                    <nav class="py-1">
+                                        <a href="#" class="nav-link block px-4 py-2 text-sm !border-none !font-normal" data-page="page-chat" onclick="showPage('page-chat')">
+                                            ✨ AI Chat
+                                        </a>
+                                        <a href="#" class="nav-link block px-4 py-2 text-sm !border-none !font-normal" data-page="page-bazaar" onclick="showPage('page-bazaar')">
+                                            Bazaar
+                                        </a>
+                                        <a href="#" class="nav-link block px-4 py-2 text-sm !border-none !font-normal" data-page="page-team" onclick="showPage('page-team')">
+                                            Humari Team
+                                        </a>
+                                         <a href="#" class="nav-link block px-4 py-2 text-sm !border-none !font-normal" data-page="page-clients" onclick="showPage('page-clients')">
+                                            Humare Clients
+                                        </a>
+                                        <a href="#" class="nav-link block px-4 py-2 text-sm !border-none !font-normal" data-page="page-faq" onclick="showPage('page-faq')">
+                                            FAQ
+                                        </a>
+                                    </nav>
+                                </div>
+                            </div>
                         </nav>
                         
                         <!-- Header Buttons -->
@@ -394,18 +430,17 @@
                                  Portal Login
                              </button>
 
-                            <!-- Profile Dropdown (Logged In Only) -->
+                            <!-- Profile Dropdown (Logged In Only) (FIX: JS Toggle) -->
                             <div class="relative hidden" id="profile-menu-container"> <!-- Initially hidden, shown via JS -->
-                                <button id="profile-button" class="dropdown-toggle p-2 rounded-full text-main hover:bg-gray-200 dark:hover:bg-gray-700">
+                                <button id="profile-button" class="dropdown-toggle p-2 rounded-full text-main hover:bg-gray-200 dark:hover:bg-gray-700" data-target="profile-dropdown">
                                     <ion-icon name="person-circle-outline" class="text-2xl"></ion-icon>
                                 </button>
-                                <div id="profile-dropdown" class="dropdown-menu bg-card border border-main rounded-lg shadow-lg overflow-hidden z-50">
+                                <div id="profile-dropdown" class="dropdown-menu">
                                     <div class="p-3 border-b border-main">
                                         <p class="text-sm font-medium text-heading truncate" id="profile-email">user@example.com</p>
                                         <p class="text-xs text-primary" id="profile-role">Client</p> <!-- Role display -->
                                     </div>
                                     <nav class="py-1">
-                                        <!-- Dashboard link changes based on role -->
                                         <a href="#" id="dashboard-link" class="nav-link block px-4 py-2 text-sm !border-none !font-normal" onclick="showDashboard()">
                                             My Dashboard 
                                         </a>
@@ -444,6 +479,17 @@
                     <a class="nav-link block" data-page="page-portfolio" onclick="showPage('page-portfolio')">Portfolio</a>
                     <a class="nav-link block" data-page="page-blog" onclick="showPage('page-blog')">Insights</a>
                     <a class="nav-link block" data-page="page-contact" onclick="showPage('page-contact')">Contact</a>
+                     <!-- NAYA: Mobile More Links -->
+                     <details class="w-full">
+                        <summary class="nav-link block cursor-pointer">More</summary>
+                        <div class="pl-4 pt-1 space-y-1">
+                           <a href="#" class="nav-link block !border-none !font-normal text-sm" data-page="page-chat" onclick="showPage('page-chat')">✨ AI Chat</a>
+                           <a href="#" class="nav-link block !border-none !font-normal text-sm" data-page="page-bazaar" onclick="showPage('page-bazaar')">Bazaar</a>
+                           <a href="#" class="nav-link block !border-none !font-normal text-sm" data-page="page-team" onclick="showPage('page-team')">Team</a>
+                           <a href="#" class="nav-link block !border-none !font-normal text-sm" data-page="page-clients" onclick="showPage('page-clients')">Clients</a>
+                           <a href="#" class="nav-link block !border-none !font-normal text-sm" data-page="page-faq" onclick="showPage('page-faq')">FAQ</a>
+                        </div>
+                    </details>
                      <hr class="border-main my-2">
                      <!-- Links shown only when logged in -->
                      <div id="mobile-profile-links" class="hidden space-y-1">
@@ -463,22 +509,96 @@
                     
                 <!-- ===== Page Home ===== -->
                 <section id="page-home" class="page-section"> 
-                     <!-- Content remains the same as previous version -->
                      <!-- Hero Section -->
                     <div class="text-center py-16 md:py-24 animate-on-scroll">
                         <h1 class="text-4xl md:text-6xl font-bold text-heading mb-6">R.S Films <span class="text-primary">Group</span></h1>
-                        <p class="text-lg md:text-xl text-main max-w-2xl mx-auto mb-8">Aapka All-in-One AI-Powered Creative Partner...</p>
+                        <p class="text-lg md:text-xl text-main max-w-2xl mx-auto mb-8">Aapka All-in-One AI-Powered Creative Partner. Hum YouTube, Music, aur Design ko next level par le jaate hain.</p>
                         <div class="flex justify-center gap-4">
-                            <button class="btn btn-primary" onclick="showPage('page-services')">Humari Sewaein Dekhein</button>
+                            <button class="btn btn-primary" onclick="showServiceDetail('channel-management')">Humari Sewaein Dekhein</button>
                             <a href="#" class="btn btn-secondary" onclick="showPage('page-portfolio')">Portfolio Dekhein</a>
                         </div>
                     </div>
                     <!-- Services Summary -->
-                    <div class="my-16 animate-on-scroll"> /* ... */ </div>
+                    <div class="my-16 animate-on-scroll">
+                        <h2 class="text-3xl font-bold text-heading text-center mb-8">Humari Mukhya Sewaein</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div class="bg-card border border-main rounded-lg p-6 shadow-sm">
+                                <ion-icon name="tv-outline" class="text-4xl text-primary mb-4"></ion-icon>
+                                <h3 class="text-xl font-semibold text-heading mb-3">Channel Management</h3>
+                                <p class="text-main">Aapke YouTube channel ko zero se hero tak pahunchana, content strategy se SEO tak.</p>
+                            </div>
+                            <div class="bg-card border border-main rounded-lg p-6 shadow-sm">
+                                <ion-icon name="musical-notes-outline" class="text-4xl text-primary mb-4"></ion-icon>
+                                <h3 class="text-xl font-semibold text-heading mb-3">Music Distribution</h3>
+                                <p class="text-main">Apne gaano ko Spotify, Apple Music, aur 150+ platforms par release karein.</p>
+                            </div>
+                            <div class="bg-card border border-main rounded-lg p-6 shadow-sm">
+                                <ion-icon name="color-palette-outline" class="text-4xl text-primary mb-4"></ion-icon>
+                                <h3 class="text-xl font-semibold text-heading mb-3">Design & Editing</h3>
+                                <p class="text-main">Professional video editing, poster design, aur aapke brand ke liye visuals.</p>
+                            </div>
+                        </div>
+                         <div class="text-center mt-8">
+                            <button class="btn btn-secondary" onclick="showPage('page-services')">Sabhi Sewaein Dekhein</button>
+                        </div>
+                    </div>
                     <!-- Top Clients -->
-                    <div class="my-24 animate-on-scroll"> /* ... */ </div>
+                    <div class="my-24 animate-on-scroll">
+                        <h2 class="text-2xl font-bold text-heading text-center mb-8">Humein Inpar Bharosa Hai</h2>
+                        <div class="w-full inline-flex flex-nowrap overflow-hidden [mask-image:_linear-gradient(to_right,transparent_0,_black_128px,_black_calc(100%-128px),transparent_100%)]">
+                            <div class="client-marquee-inner">
+                                <!-- Logos Set 1 -->
+                                <div class="client-logo"><img src="https://placehold.co/150x50/CBD5E1/334155?text=Client+Logo" alt="Client 1"></div>
+                                <div class="client-logo"><img src="https://placehold.co/150x50/CBD5E1/334155?text=Brand+Here" alt="Client 2"></div>
+                                <div class="client-logo"><img src="https://placehold.co/150x50/CBD5E1/334155?text=Music+Label" alt="Client 3"></div>
+                                <div class="client-logo"><img src="https://placehold.co/150x50/CBD5E1/334155?text=Creator+Co" alt="Client 4"></div>
+                                <div class="client-logo"><img src="https://placehold.co/150x50/CBD5E1/334155?text=Studio" alt="Client 5"></div>
+                                <div class="client-logo"><img src="https://placehold.co/150x50/CBD5E1/334155?text=Big+Brand" alt="Client 6"></div>
+                                <!-- Logos Set 2 -->
+                                <div class="client-logo"><img src="https://placehold.co/150x50/CBD5E1/334155?text=Client+Logo" alt="Client 1"></div>
+                                <div class="client-logo"><img src="https://placehold.co/150x50/CBD5E1/334155?text=Brand+Here" alt="Client 2"></div>
+                                <div class="client-logo"><img src="https://placehold.co/150x50/CBD5E1/334155?text=Music+Label" alt="Client 3"></div>
+                                <div class="client-logo"><img src="https://placehold.co/150x50/CBD5E1/334155?text=Creator+Co" alt="Client 4"></div>
+                                <div class="client-logo"><img src="https://placehold.co/150x50/CBD5E1/334155?text=Studio" alt="Client 5"></div>
+                                <div class="client-logo"><img src="https://placehold.co/150x50/CBD5E1/334155?text=Big+Brand" alt="Client 6"></div>
+                            </div>
+                        </div>
+                    </div>
                     <!-- Testimonials -->
-                    <div class="my-16 animate-on-scroll"> /* ... */ </div>
+                    <div class="my-16 animate-on-scroll">
+                        <h2 class="text-3xl font-bold text-heading text-center mb-8">Humare Clients Kya Kehte Hain</h2>
+                        <div id="testimonial-slider-container" class="relative max-w-2xl mx-auto overflow-hidden">
+                            <div id="testimonial-slider-inner">
+                                <!-- Slide 1 -->
+                                <div class="testimonial-slide">
+                                    <div class="bg-card border border-main rounded-lg p-6 shadow-sm">
+                                        <p class="text-main mb-4 text-lg">"R.S Films Group ne mera music career badal diya..."</p>
+                                        <div class="flex items-center"><img src="https://placehold.co/40x40/3B82F6/FFFFFF?text=A" alt="Client" class="w-10 h-10 rounded-full mr-3"><div><h4 class="font-semibold text-heading">DJ Raaj</h4><p class="text-sm text-main">Musician</p></div></div>
+                                    </div>
+                                </div>
+                                <!-- Slide 2 -->
+                                <div class="testimonial-slide">
+                                    <div class="bg-card border border-main rounded-lg p-6 shadow-sm">
+                                        <p class="text-main mb-4 text-lg">"Mera YouTube channel 10k se 100k subscribers tak inki team ki wajah se pahuncha..."</p>
+                                        <div class="flex items-center"><img src="https://placehold.co/40x40/10B981/FFFFFF?text=V" alt="Client" class="w-10 h-10 rounded-full mr-3"><div><h4 class="font-semibold text-heading">Tech Vlogger</h4><p class="text-sm text-main">YouTuber</p></div></div>
+                                    </div>
+                                </div>
+                                <!-- Slide 3 -->
+                                <div class="testimonial-slide">
+                                    <div class="bg-card border border-main rounded-lg p-6 shadow-sm">
+                                        <p class="text-main mb-4 text-lg">"Poster design ekdum unique aur professional tha..."</p>
+                                        <div class="flex items-center"><img src="https://placehold.co/40x40/F59E0B/FFFFFF?text=S" alt="Client" class="w-10 h-10 rounded-full mr-3"><div><h4 class="font-semibold text-heading">SK Films</h4><p class="text-sm text-main">Production House</p></div></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Slider Dots -->
+                            <div id="testimonial-dots" class="flex justify-center space-x-2 mt-4">
+                                <button class="testimonial-dot active h-2 w-2 rounded-full bg-primary"></button>
+                                <button class="testimonial-dot h-2 w-2 rounded-full bg-gray-300"></button>
+                                <button class="testimonial-dot h-2 w-2 rounded-full bg-gray-300"></button>
+                            </div>
+                        </div>
+                    </div>
                 </section>
                 
                 <!-- ===== Page: Services ===== -->
@@ -486,16 +606,68 @@
                     <h1 class="text-3xl font-bold text-heading mb-6">Humari Sewaein</h1>
                     <!-- Service Details -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
-                         <div class="bg-card border border-main rounded-lg p-6 shadow-sm"> /* Channel Management */ <button class="text-primary font-medium text-sm mt-3" onclick="showServiceDetail('channel-management')">Aur Jaane →</button></div>
-                         <div class="bg-card border border-main rounded-lg p-6 shadow-sm"> /* Music Distribution */ <button class="text-primary font-medium text-sm mt-3" onclick="showServiceDetail('music-distribution')">Aur Jaane →</button></div>
-                         <div class="bg-card border border-main rounded-lg p-6 shadow-sm"> /* MCN */ <button class="text-primary font-medium text-sm mt-3" onclick="showServiceDetail('mcn')">Aur Jaane →</button></div>
-                         <div class="bg-card border border-main rounded-lg p-6 shadow-sm"> /* Design & Editing */ <button class="text-primary font-medium text-sm mt-3" onclick="showServiceDetail('design-editing')">Aur Jaane →</button></div>
-                         <div class="bg-card border border-main rounded-lg p-6 shadow-sm"> /* NAYA: Digital Marketing */ <ion-icon name="megaphone-outline" class="text-4xl text-primary mb-4"></ion-icon><h3 class="text-xl font-semibold text-heading mb-3">360° Digital Marketing</h3><p class="text-main">Aapke brand ko online grow karne ke liye strategies...</p><button class="text-primary font-medium text-sm mt-3" onclick="showServiceDetail('digital-marketing')">Aur Jaane →</button></div>
-                         <div class="bg-card border border-main rounded-lg p-6 shadow-sm"> /* NAYA: Talent Acquisition */ <ion-icon name="person-add-outline" class="text-4xl text-primary mb-4"></ion-icon><h3 class="text-xl font-semibold text-heading mb-3">Talent Acquisition</h3><p class="text-main">Projects ke liye sahi talent (actors, models, crew) dhoondhna...</p><button class="text-primary font-medium text-sm mt-3" onclick="showServiceDetail('talent-acquisition')">Aur Jaane →</button></div>
+                         <div class="bg-card border border-main rounded-lg p-6 shadow-sm"><ion-icon name="tv-outline" class="text-4xl text-primary mb-4"></ion-icon><h3 class="text-xl font-semibold text-heading mb-3">Channel Management</h3><p class="text-main">Hum aapke YouTube aur social media channels ko poori tarah manage karte hain...</p><button class="text-primary font-medium text-sm mt-3" onclick="showServiceDetail('channel-management')">Aur Jaane →</button></div>
+                         <div class="bg-card border border-main rounded-lg p-6 shadow-sm"><ion-icon name="musical-notes-outline" class="text-4xl text-primary mb-4"></ion-icon><h3 class="text-xl font-semibold text-heading mb-3">Music Distribution</h3><p class="text-main">Apne sangeet ko duniya bhar mein pahunchayein. Hum aapke gaano ko Spotify, Apple Music...</p><button class="text-primary font-medium text-sm mt-3" onclick="showServiceDetail('music-distribution')">Aur Jaane →</button></div>
+                         <div class="bg-card border border-main rounded-lg p-6 shadow-sm"><ion-icon name="videocam-outline" class="text-4xl text-primary mb-4"></ion-icon><h3 class="text-xl font-semibold text-heading mb-3">MCN (Multi-Channel Network)</h3><p class="text-main">Humari MCN join karke apne content ko protect karein. Hum aapko Content ID dete hain...</p><button class="text-primary font-medium text-sm mt-3" onclick="showServiceDetail('mcn')">Aur Jaane →</button></div>
+                         <div class="bg-card border border-main rounded-lg p-6 shadow-sm"><ion-icon name="color-palette-outline" class="text-4xl text-primary mb-4"></ion-icon><h3 class="text-xl font-semibold text-heading mb-3">Design & Editing</h3><p class="text-main">First impression zaroori hai. Humari team professional video editors aur graphic designers ki hai...</p><button class="text-primary font-medium text-sm mt-3" onclick="showServiceDetail('design-editing')">Aur Jaane →</button></div>
+                         <div class="bg-card border border-main rounded-lg p-6 shadow-sm"><ion-icon name="megaphone-outline" class="text-4xl text-primary mb-4"></ion-icon><h3 class="text-xl font-semibold text-heading mb-3">360° Digital Marketing</h3><p class="text-main">Aapke brand ko online grow karne ke liye strategies...</p><button class="text-primary font-medium text-sm mt-3" onclick="showServiceDetail('digital-marketing')">Aur Jaane →</button></div>
+                         <div class="bg-card border border-main rounded-lg p-6 shadow-sm"><ion-icon name="person-add-outline" class="text-4xl text-primary mb-4"></ion-icon><h3 class="text-xl font-semibold text-heading mb-3">Talent Acquisition</h3><p class="text-main">Projects ke liye sahi talent (actors, models, crew) dhoondhna...</p><button class="text-primary font-medium text-sm mt-3" onclick="showServiceDetail('talent-acquisition')">Aur Jaane →</button></div>
                     </div>
                     <!-- Pricing Table -->
                     <h2 class="text-3xl font-bold text-heading mb-6 text-center mt-16">Pricing Plans</h2>
-                    <div class="bg-card border border-main rounded-lg shadow-lg overflow-x-auto mb-16"> /* ... Table structure remains same ... */ </div>
+                    <div class="bg-card border border-main rounded-lg shadow-lg overflow-x-auto mb-16">
+                        <table class="w-full min-w-[800px]">
+                             <thead>
+                                <tr class="border-b border-main">
+                                    <th class="p-4 text-left text-base font-semibold text-heading w-1/4">Features</th>
+                                    <th class="p-4 text-center w-1/4"><h3 class="text-base font-semibold text-heading">Silver</h3><p class="text-2xl font-bold text-heading my-2">$99/mo</p></th>
+                                    <th class="p-4 text-center w-1/4 border-x border-main bg-primary-light"><h3 class="text-base font-semibold text-primary">Gold (Popular)</h3><p class="text-2xl font-bold text-heading my-2">$299/mo</p></th>
+                                    <th class="p-4 text-center w-1/4"><h3 class="text-base font-semibold text-heading">Platinum</h3><p class="text-2xl font-bold text-heading my-2">$599/mo</p></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border-b border-main"><td colspan="4" class="p-3 bg-app font-semibold text-heading text-sm">Channel Management</td></tr>
+                                <tr class="border-b border-main">
+                                    <td class="p-3 text-main">YouTube SEO</td>
+                                    <td class="p-3 text-center text-green-500"><ion-icon name="checkmark-outline"></ion-icon></td>
+                                    <td class="p-3 text-center text-green-500 bg-primary-light"><ion-icon name="checkmark-outline"></ion-icon></td>
+                                    <td class="p-3 text-center text-green-500"><ion-icon name="checkmark-outline"></ion-icon></td>
+                                </tr>
+                                <tr class="border-b border-main">
+                                    <td class="p-3 text-main">Content Strategy Call</td>
+                                    <td class="p-3 text-center text-heading font-medium">1 / month</td>
+                                    <td class="p-3 text-center text-heading font-medium bg-primary-light">2 / month</td>
+                                    <td class="p-3 text-center text-heading font-medium">Weekly</td>
+                                </tr>
+                                <tr class="border-b border-main"><td colspan="4" class="p-3 bg-app font-semibold text-heading text-sm">Music Distribution</td></tr>
+                                <tr class="border-b border-main">
+                                    <td class="p-3 text-main">All Major Platforms</td>
+                                    <td class="p-3 text-center text-green-500"><ion-icon name="checkmark-outline"></ion-icon></td>
+                                    <td class="p-3 text-center text-green-500 bg-primary-light"><ion-icon name="checkmark-outline"></ion-icon></td>
+                                    <td class="p-3 text-center text-green-500"><ion-icon name="checkmark-outline"></ion-icon></td>
+                                </tr>
+                                <tr class="border-b border-main">
+                                    <td class="p-3 text-main">Royalty Split</td>
+                                    <td class="p-3 text-center text-heading font-medium">80%</td>
+                                    <td class="p-3 text-center text-heading font-medium bg-primary-light">90%</td>
+                                    <td class="p-3 text-center text-heading font-medium">100%</td>
+                                </tr>
+                                <tr class="border-b border-main"><td colspan="4" class="p-3 bg-app font-semibold text-heading text-sm">Design & Editing</td></tr>
+                                <tr class="border-b border-main">
+                                    <td class="p-3 text-main">Thumbnail Design</td>
+                                    <td class="p-3 text-center text-gray-400"><ion-icon name="remove-outline"></ion-icon></td>
+                                    <td class="p-3 text-center text-green-500 bg-primary-light"><ion-icon name="checkmark-outline"></ion-icon></td>
+                                    <td class="p-3 text-center text-green-500"><ion-icon name="checkmark-outline"></ion-icon></td>
+                                </tr>
+                                <tr>
+                                    <td class="p-3 text-main">Video Editing</td>
+                                    <td class="p-3 text-center text-gray-400"><ion-icon name="remove-outline"></ion-icon></td>
+                                    <td class="p-3 text-center text-gray-400 bg-primary-light"><ion-icon name="remove-outline"></ion-icon></td>
+                                    <td class="p-3 text-center text-green-500"><ion-icon name="checkmark-outline"></ion-icon></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </section>
 
                 <!-- ===== NAYA: Page Talent ===== -->
@@ -517,13 +689,14 @@
                              <p class="text-primary font-medium mb-2">YouTuber (Tech)</p>
                              <button class="btn btn-outline btn-sm mt-2">View Profile</button>
                          </div>
-                         <!-- Add more talent cards (6-8 total) -->
+                         <!-- Talent Card 3 -->
                           <div class="bg-card border border-main rounded-lg shadow-sm text-center p-6 transform transition duration-300 hover:scale-105">
                              <img src="https://placehold.co/150x150/EF4444/FFFFFF?text=Model+1" alt="Talent" class="w-32 h-32 rounded-full mx-auto mb-4 shadow-lg ring-2 ring-primary/50">
                              <h3 class="text-xl font-semibold text-heading">Model Ka Naam 1</h3>
                              <p class="text-primary font-medium mb-2">Actor / Model</p>
                              <button class="btn btn-outline btn-sm mt-2">View Profile</button>
                          </div>
+                         <!-- Talent Card 4 -->
                           <div class="bg-card border border-main rounded-lg shadow-sm text-center p-6 transform transition duration-300 hover:scale-105">
                              <img src="https://placehold.co/150x150/F59E0B/FFFFFF?text=Artist+2" alt="Talent" class="w-32 h-32 rounded-full mx-auto mb-4 shadow-lg ring-2 ring-primary/50">
                              <h3 class="text-xl font-semibold text-heading">Artist Ka Naam 2</h3>
@@ -535,63 +708,206 @@
 
                 <!-- ===== Page Portfolio ===== -->
                 <section id="page-portfolio" class="page-section">
-                    <!-- Content remains same as previous version -->
                      <h1 class="text-3xl font-bold text-heading mb-6">Humara Portfolio / Case Studies</h1>
                      <!-- Filters & Search -->
-                    <div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-6"> /* ... */ </div>
+                    <div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
+                        <div id="portfolio-filters" class="flex flex-wrap gap-2">
+                             <button class="filter-btn active" data-filter="all">All</button>
+                             <button class="filter-btn" data-filter="music-video">Music Videos</button>
+                             <button class="filter-btn" data-filter="poster">Posters</button>
+                             <button class="filter-btn" data-filter="vlog">Vlogs</button>
+                             <button class="filter-btn" data-filter="brand">Brand Ads</button>
+                        </div>
+                        <div class="relative w-full md:w-64">
+                            <input type="text" placeholder="Portfolio mein search karein..." class="form-input !pr-10">
+                            <ion-icon name="search-outline" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400"></ion-icon>
+                        </div>
+                    </div>
                     <!-- Portfolio Grid -->
-                    <div id="portfolio-items" class="grid grid-cols-1 md:grid-cols-3 gap-6"> /* ... Items ... */ </div>
+                    <div id="portfolio-items" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <!-- Item 1 -->
+                        <div class="portfolio-item bg-card border border-main rounded-lg shadow-sm overflow-hidden cursor-pointer" data-category="music-video" onclick="showServiceDetail('sample-project-1')">
+                            <img src="https://placehold.co/600x400/3B82F6/FFFFFF?text=Music+Video+1" alt="Portfolio Item" class="w-full h-48 object-cover">
+                            <div class="p-4"><h3 class="text-lg font-semibold text-heading mb-1">Music Video - 'Dil Se'</h3><p class="text-primary text-sm font-medium">Music Video</p></div>
+                        </div>
+                         <!-- Item 2 -->
+                        <div class="portfolio-item bg-card border border-main rounded-lg shadow-sm overflow-hidden cursor-pointer" data-category="poster" onclick="showServiceDetail('sample-project-2')">
+                            <img src="https://placehold.co/600x400/EF4444/FFFFFF?text=Poster+Design+1" alt="Portfolio Item" class="w-full h-48 object-cover">
+                            <div class="p-4"><h3 class="text-lg font-semibold text-heading mb-1">Album Art - 'Raat'</h3><p class="text-primary text-sm font-medium">Poster Design</p></div>
+                        </div>
+                         <!-- Item 3 -->
+                        <div class="portfolio-item bg-card border border-main rounded-lg shadow-sm overflow-hidden cursor-pointer" data-category="vlog" onclick="showServiceDetail('sample-project-3')">
+                            <img src="https://placehold.co/600x400/10B981/FFFFFF?text=Vlog+Edit+1" alt="Portfolio Item" class="w-full h-48 object-cover">
+                            <div class="p-4"><h3 class="text-lg font-semibold text-heading mb-1">Tech Guru Vlog Edit</h3><p class="text-primary text-sm font-medium">Vlog Editing</p></div>
+                        </div>
+                         <!-- Item 4 -->
+                        <div class="portfolio-item bg-card border border-main rounded-lg shadow-sm overflow-hidden cursor-pointer" data-category="brand" onclick="showServiceDetail('sample-project-4')">
+                            <img src="https://placehold.co/600x400/F59E0B/FFFFFF?text=Brand+Ad+1" alt="Portfolio Item" class="w-full h-48 object-cover">
+                            <div class="p-4"><h3 class="text-lg font-semibold text-heading mb-1">Local Cafe Brand Ad</h3><p class="text-primary text-sm font-medium">Brand Ad</p></div>
+                        </div>
+                         <!-- Item 5 -->
+                         <div class="portfolio-item bg-card border border-main rounded-lg shadow-sm overflow-hidden cursor-pointer" data-category="music-video" onclick="showServiceDetail('sample-project-5')">
+                            <img src="https://placehold.co/600x400/6366F1/FFFFFF?text=Music+Video+2" alt="Portfolio Item" class="w-full h-48 object-cover">
+                            <div class="p-4"><h3 class="text-lg font-semibold text-heading mb-1">Acoustic Cover Video</h3><p class="text-primary text-sm font-medium">Music Video</p></div>
+                        </div>
+                         <!-- Item 6 -->
+                        <div class="portfolio-item bg-card border border-main rounded-lg shadow-sm overflow-hidden cursor-pointer" data-category="poster" onclick="showServiceDetail('sample-project-6')">
+                            <img src="https://placehold.co/600x400/EC4899/FFFFFF?text=Poster+Design+2" alt="Portfolio Item" class="w-full h-48 object-cover">
+                            <div class="p-4"><h3 class="text-lg font-semibold text-heading mb-1">Live Concert Poster</h3><p class="text-primary text-sm font-medium">Poster Design</p></div>
+                        </div>
+                    </div>
                 </section>
                 
                 <!-- ===== Page Service Detail ===== -->
                 <section id="page-service-detail" class="page-section">
-                    <!-- Content structure remains same, dynamically loaded by JS -->
                      <div class="max-w-4xl mx-auto">
-                        <button class="nav-link !border-none !inline-flex items-center !p-0 mb-4" onclick="goBack()"> /* ... Back Button ... */ </button>
-                        <h1 id="service-detail-title"></h1>
-                        <p id="service-detail-category"></p>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8"> /* Images */ </div>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                            <div class="md:col-span-2 article-content" id="service-detail-desc"></div>
-                            <div class="bg-card border border-main rounded-lg shadow-sm p-6 self-start"> /* Pricing & CTA */ </div>
-                        </div>
-                        <div class="mt-16"> /* Related Services */ </div>
+                        <!-- Back Button -->
+                        <button class="nav-link !border-none !inline-flex items-center !p-0 mb-4" onclick="goBack()">
+                            <ion-icon name="arrow-back-outline" class="mr-2"></ion-icon>
+                            Waapas Jaayein
+                        </button>
+
+                         <h1 id="service-detail-title" class="text-4xl font-bold text-heading mb-4">Service / Project Title Yahaan</h1>
+                         <p id="service-detail-category" class="text-primary font-medium mb-6">Service Category</p>
+
+                         <!-- Image/Video Gallery -->
+                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                            <img id="service-detail-img1" src="https://placehold.co/800x600/3B82F6/FFFFFF?text=Demo+1" alt="Service Demo" class="w-full rounded-lg shadow">
+                            <img id="service-detail-img2" src="https://placehold.co/800x600/10B981/FFFFFF?text=Demo+2" alt="Service Demo" class="w-full rounded-lg shadow">
+                         </div>
+
+                         <!-- Description & Pricing Model -->
+                         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                            <div class="md:col-span-2 article-content">
+                                <h2 class="text-2xl font-semibold text-heading mb-4">Description</h2>
+                                <div id="service-detail-desc">
+                                    <p>Yahaan service ya project ka detail description aayega. Hum kya karte hain, process kya hai, etc.</p>
+                                </div>
+                            </div>
+                            <div class="bg-card border border-main rounded-lg shadow-sm p-6 self-start">
+                                <h3 class="text-lg font-semibold text-heading mb-4">Pricing Model</h3>
+                                <p id="service-detail-pricing" class="text-main mb-4">Humare paas is service ke liye flexible pricing options hain.</p>
+                                <button class="btn btn-primary w-full" onclick="showPage('page-project-submit')">Start Project / Request Quote</button>
+                            </div>
+                         </div>
+
+                         <!-- Related Services -->
+                         <div class="mt-16">
+                            <h2 class="text-2xl font-semibold text-heading mb-4">Related Services</h2>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <!-- Related Service 1 -->
+                                <div class="bg-card border border-main rounded-lg shadow-sm overflow-hidden cursor-pointer" onclick="showServiceDetail('design-editing')">
+                                     <img src="https://placehold.co/600x400/EF4444/FFFFFF?text=Creative" alt="Related Service" class="w-full h-32 object-cover">
+                                     <div class="p-4"><h3 class="text-md font-semibold text-heading mb-1">Creative Services</h3><p class="text-primary text-xs font-medium">Design/Edit</p></div>
+                                </div>
+                                <!-- Related Service 2 -->
+                                 <div class="bg-card border border-main rounded-lg shadow-sm overflow-hidden cursor-pointer" onclick="showServiceDetail('digital-marketing')">
+                                     <img src="https://placehold.co/600x400/EC4899/FFFFFF?text=Marketing" alt="Related Service" class="w-full h-32 object-cover">
+                                     <div class="p-4"><h3 class="text-md font-semibold text-heading mb-1">Digital Marketing</h3><p class="text-primary text-xs font-medium">Marketing</p></div>
+                                </div>
+                                 <!-- Related Service 3 -->
+                                 <div class="bg-card border border-main rounded-lg shadow-sm overflow-hidden cursor-pointer" onclick="showServiceDetail('mcn')">
+                                     <img src="https://placehold.co/600x400/F59E0B/FFFFFF?text=MCN" alt="Related Service" class="w-full h-32 object-cover">
+                                     <div class="p-4"><h3 class="text-md font-semibold text-heading mb-1">YouTube MCN</h3><p class="text-primary text-xs font-medium">YouTube</p></div>
+                                </div>
+                            </div>
+                         </div>
                      </div>
                 </section>
-
+                
                 <!-- ===== Page Insights (Blog) ===== -->
                 <section id="page-blog" class="page-section">
-                    <!-- Content remains same as previous version -->
                      <h1 class="text-3xl font-bold text-heading mb-6">Insights (Creator Gyaan)</h1>
                      <!-- Featured Post -->
-                    <div class="bg-card border border-main rounded-lg shadow-sm overflow-hidden md:flex mb-8 cursor-pointer" onclick="showBlogDetail(1)"> /* ... */ </div>
+                    <div class="bg-card border border-main rounded-lg shadow-sm overflow-hidden md:flex mb-8 cursor-pointer" onclick="showBlogDetail(1)">
+                        <img src="https://placehold.co/800x400/3B82F6/FFFFFF?text=YouTube+SEO" alt="Blog" class="w-full md:w-1/2 h-64 md:h-auto object-cover">
+                        <div class="p-6 md:p-8">
+                            <p class="text-primary font-medium text-sm mb-1">Featured Article</p>
+                            <h3 class="text-2xl font-semibold text-heading mb-3">YouTube SEO 2025: Video Rank Karne Ke 5 Tareeke</h3>
+                            <p class="text-main text-sm mb-4">YouTube algorithm kaise kaam karta hai aur aap kaise top par aa sakte hain...</p>
+                            <span class="text-primary font-medium text-sm">Poora Padhein →</span>
+                        </div>
+                    </div>
                     <!-- Post Grid -->
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6"> /* ... Posts ... */ </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <!-- Blog Post 2 -->
+                        <div class="bg-card border border-main rounded-lg shadow-sm overflow-hidden cursor-pointer" onclick="showBlogDetail(2)">
+                            <img src="https://placehold.co/600x400/10B981/FFFFFF?text=Music+Promotion" alt="Blog" class="w-full h-40 object-cover">
+                            <div class="p-4"><h3 class="text-lg font-semibold text-heading mb-2">Music Promotion: Spotify Par Followers Kaise Badhayein</h3><p class="text-main text-sm mb-3">Apne naye gaane ko release karne ke baad playlists mein kaise pahunchayein...</p><span class="text-primary font-medium text-sm">Poora Padhein →</span></div>
+                        </div>
+                        <!-- Blog Post 3 -->
+                         <div class="bg-card border border-main rounded-lg shadow-sm overflow-hidden cursor-pointer" onclick="showBlogDetail(3)">
+                            <img src="https://placehold.co/600x400/F59E0B/FFFFFF?text=AI+Editing" alt="Blog" class="w-full h-40 object-cover">
+                            <div class="p-4"><h3 class="text-lg font-semibold text-heading mb-2">AI Video Editing: Aapka Samay Bachane Waale Tools</h3><p class="text-main text-sm mb-3">Kaise AI tools aapki editing ko 10 guna tez bana sakte hain...</p><span class="text-primary font-medium text-sm">Poora Padhein →</span></div>
+                        </div>
+                        <!-- Blog Post 4 -->
+                        <div class="bg-card border border-main rounded-lg shadow-sm overflow-hidden cursor-pointer" onclick="showBlogDetail(1)"> <!-- Use Post 1 data for example -->
+                            <img src="https://placehold.co/600x400/EF4444/FFFFFF?text=Thumbnail+Design" alt="Blog" class="w-full h-40 object-cover">
+                            <div class="p-4"><h3 class="text-lg font-semibold text-heading mb-2">Thumbnail Psychology: 10% CTR Paane Ke Secrets</h3><p class="text-main text-sm mb-3">Aapka thumbnail hi sab kuch hai. Sikhiye kaise colors aur text...</p><span class="text-primary font-medium text-sm">Poora Padhein →</span></div>
+                        </div>
+                    </div>
                 </section>
 
                  <!-- ===== Page Blog Detail ===== -->
                 <section id="page-blog-detail" class="page-section">
-                    <!-- Content remains same -->
-                    <div class="max-w-3xl mx-auto"> /* ... Structure ... */ </div>
+                    <div class="max-w-3xl mx-auto">
+                        <!-- Back Button -->
+                        <button class="nav-link !border-none !inline-flex items-center !p-0 mb-4" onclick="showPage('page-blog')">
+                            <ion-icon name="arrow-back-outline" class="mr-2"></ion-icon>
+                            Back to Insights
+                        </button>
+                        <!-- Article Header -->
+                        <h1 id="blog-detail-title" class="text-4xl font-bold text-heading mb-4">Blog Post Title</h1>
+                        <div class="flex items-center text-main text-sm mb-4">
+                            <img id="blog-detail-author-img" src="https://placehold.co/40x40/3B82F6/FFFFFF?text=A" alt="Author" class="w-8 h-8 rounded-full mr-3">
+                            <span id="blog-detail-author-name">Author Name</span>
+                            <span class="mx-2">•</span>
+                            <span id="blog-detail-date">Oct 24, 2025</span>
+                        </div>
+                        <!-- Article Image -->
+                        <img id="blog-detail-image" src="https://placehold.co/1200x600/3B82F6/FFFFFF?text=Blog+Image" alt="Blog Header" class="w-full h-64 md:h-96 object-cover rounded-lg shadow-lg mb-8">
+                        <!-- Article Content -->
+                        <div id="blog-detail-content" class="article-content"></div>
+                    </div>
                 </section>
 
                 <!-- ===== Page Contact ===== -->
                 <section id="page-contact" class="page-section">
-                    <!-- Content remains same -->
                      <h1 class="text-3xl font-bold text-heading mb-6">Contact & Intake</h1>
-                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8"> /* Form & Info */ </div>
+                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <!-- Contact Form -->
+                        <div class="bg-card border border-main rounded-lg shadow-lg p-6">
+                            <h2 class="text-xl font-semibold text-heading mb-4">Humein Message Bhejein</h2>
+                            <form id="contact-form" class="space-y-4">
+                                <div><label class="form-label" for="contact-name">Aapka Naam</label><input class="form-input" type="text" id="contact-name" required></div>
+                                <div><label class="form-label" for="contact-email">Email</label><input class="form-input" type="email" id="contact-email" required></div>
+                                <div><label class="form-label" for="contact-message">Aapka Sandesh</label><textarea class="form-input" id="contact-message" rows="5" required></textarea></div>
+                                <div class="text-right"><button type="submit" class="btn btn-primary">Send Message</button></div>
+                            </form>
+                        </div>
+                        <!-- Contact Info & Map -->
+                        <div class="bg-card border border-main rounded-lg shadow-lg p-6">
+                            <h2 class="text-xl font-semibold text-heading mb-4">Info</h2>
+                            <div class="space-y-3 text-main">
+                                <p class="flex items-center"><ion-icon name="mail-outline" class="text-primary text-xl mr-3"></ion-icon> info@rsfilmsgroup.com</p>
+                                <p class="flex items-center"><ion-icon name="call-outline" class="text-primary text-xl mr-3"></ion-icon> +91 99999 88888</p>
+                                <p class="flex items-center"><ion-icon name="location-outline" class="text-primary text-xl mr-3"></ion-icon> Film City, Noida, UP, India</p>
+                            </div>
+                            <!-- Google Map Placeholder -->
+                            <div class="mt-6 w-full h-48 bg-gray-200 rounded-lg flex items-center justify-center"><p class="text-gray-500">(Yahaan Google Map Embed Hoga)</p></div>
+                        </div>
+                    </div>
                 </section>
 
                 <!-- ===== NAYA: Page Client Dashboard ===== -->
                  <section id="page-client-dashboard" class="page-section">
                     <h1 class="text-3xl font-bold text-heading mb-6">Client Dashboard</h1>
-                    
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <!-- Left Column (Main Modules) -->
                         <div class="lg:col-span-2 space-y-6">
                             <!-- Personalized Welcome / Quick Stats -->
                              <div class="dashboard-card">
-                                <h2 class="dashboard-card-title">Namaste, [Client Name]!</h2>
+                                <h2 class="dashboard-card-title">Namaste, <span id="client-name-placeholder">Client</span>!</h2>
                                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
                                     <div><p class="text-2xl font-bold text-primary">3</p><p class="text-sm text-main">Active Projects</p></div>
                                     <div><p class="text-2xl font-bold text-green-600">5</p><p class="text-sm text-main">Completed Projects</p></div>
@@ -620,7 +936,6 @@
                             <div class="dashboard-card">
                                 <h2 class="dashboard-card-title flex items-center"><ion-icon name="logo-youtube" class="mr-2 text-red-600"></ion-icon> YouTube Studio</h2>
                                 <p class="text-main mb-4">Apne channel ki performance aur MCN status dekhein.</p>
-                                <!-- Placeholder Content -->
                                 <p class="text-main">Views (Last 30d): 1.2M</p>
                                 <p class="text-main">Subscribers: 110K (+5k)</p>
                                 <p class="text-main">MCN Status: <span class="text-green-600 font-medium">Active</span></p>
@@ -630,14 +945,14 @@
 
                         <!-- Right Column (Quick Access) -->
                         <div class="space-y-6">
-                            <!-- Wallet & Payouts -->
+                            <!-- Wallet & Payouts (Payment Page) -->
                             <div class="dashboard-card">
                                 <h2 class="dashboard-card-title flex items-center"><ion-icon name="wallet-outline" class="mr-2 text-primary"></ion-icon> Wallet & Payouts</h2>
                                 <p class="text-lg font-semibold text-heading">Balance: <span class="text-green-600">$550.00</span></p>
                                 <p class="text-sm text-main">Next Payout: Nov 15, 2025</p>
                                 <p class="text-red-600 font-medium mt-2">Outstanding: $125.00</p>
                                 <button class="btn btn-primary btn-sm w-full mt-3">Pay Outstanding</button>
-                                <button class="btn btn-outline btn-sm w-full mt-2" onclick="/* Show finance ledger details */">View Finance Ledger</button>
+                                <button class="btn btn-outline btn-sm w-full mt-2" onclick="showPage('page-finance-ledger')">View Finance Ledger</button>
                             </div>
 
                              <!-- Service Marketplace -->
@@ -659,7 +974,37 @@
                     </div>
                  </section>
 
-                 <!-- ===== NAYA: Page Account Manager Dashboard ===== -->
+                <!-- NAYA: Page Finance Ledger (Placeholder) -->
+                <section id="page-finance-ledger" class="page-section">
+                    <button class="nav-link !border-none !inline-flex items-center !p-0 mb-4" onclick="showDashboard()">
+                        <ion-icon name="arrow-back-outline" class="mr-2"></ion-icon>
+                        Back to Dashboard
+                    </button>
+                    <h1 class="text-3xl font-bold text-heading mb-6">Finance Ledger</h1>
+                     <div class="bg-card border border-main rounded-lg shadow-lg">
+                         <div class="overflow-x-auto">
+                             <table class="w-full dashboard-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th><th>Description</th><th>Project</th><th>Service Cost</th><th>Payment</th><th>Balance</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td>Oct 20, 2025</td><td>Initial Payment - Video Editing</td><td>Dil Se</td><td>-</td><td class="text-green-600">+$150.00</td><td class="font-medium">$150.00</td></tr>
+                                    <tr><td>Oct 22, 2025</td><td>Shooting Cost Added</td><td>Dil Se</td><td class="text-red-600">-$50.00</td><td>-</td><td class="font-medium">$100.00</td></tr>
+                                    <tr><td>Oct 25, 2025</td><td>Invoice - Album Art</td><td>Raat</td><td class="text-red-600">-$75.00</td><td>-</td><td class="font-medium">$25.00</td></tr>
+                                     <tr><td>Oct 28, 2025</td><td>Music Royalty Payout</td><td>-</td><td>-</td><td class="text-green-600">+$525.00</td><td class="font-medium">$550.00</td></tr>
+                                </tbody>
+                             </table>
+                         </div>
+                         <div class="p-4 text-right">
+                            <p class="text-lg font-semibold text-heading">Current Balance: <span class="text-green-600">$550.00</span></p>
+                            <p class="text-md font-semibold text-heading">Total Outstanding: <span class="text-red-600">$125.00</span> (From unpaid invoices)</p>
+                         </div>
+                     </div>
+                </section>
+
+                 <!-- ===== Page Account Manager Dashboard ===== -->
                  <section id="page-manager-dashboard" class="page-section">
                      <h1 class="text-3xl font-bold text-heading mb-6">Account Manager Dashboard</h1>
                      <div class="dashboard-grid">
@@ -690,77 +1035,208 @@
                      </div>
                  </section>
 
-                <!-- ===== NAYA: Page Super Admin Dashboard ===== -->
+                <!-- ===== Page Super Admin Dashboard ===== -->
                  <section id="page-superadmin-dashboard" class="page-section">
                      <h1 class="text-3xl font-bold text-heading mb-6">Super Admin Dashboard</h1>
                      <p class="text-main mb-6">Welcome, Admin. Yahaan se aap poora platform manage kar sakte hain.</p>
                      
                      <div class="dashboard-grid">
-                        <div class="dashboard-card">
-                            <h2 class="dashboard-card-title"><ion-icon name="people-outline" class="mr-2"></ion-icon>User & Access Control</h2>
-                            <p><a href="#" class="text-primary hover:underline">Manage Users</a></p>
-                            <p><a href="#" class="text-primary hover:underline">Manage Roles & Permissions</a></p>
-                        </div>
-                         <div class="dashboard-card">
-                            <h2 class="dashboard-card-title"><ion-icon name="briefcase-outline" class="mr-2"></ion-icon>Client Portfolio Management</h2>
-                            <p><a href="#" class="text-primary hover:underline">View All Clients</a></p>
-                            <p><a href="#" class="text-primary hover:underline">View All Projects</a></p>
-                            <p><a href="#" class="text-primary hover:underline">Assign Account Managers</a></p>
-                        </div>
-                        <div class="dashboard-card">
-                            <h2 class="dashboard-card-title"><ion-icon name="musical-notes-outline" class="mr-2"></ion-icon>Music Operations</h2>
-                             <p><a href="#" class="text-primary hover:underline">Review Music Submissions</a></p>
-                             <p><a href="#" class="text-primary hover:underline">Manage Distribution Channels</a></p>
-                             <p><a href="#" class="text-primary hover:underline">Royalty Reports</a></p>
-                        </div>
-                         <div class="dashboard-card">
-                            <h2 class="dashboard-card-title"><ion-icon name="shield-checkmark-outline" class="mr-2"></ion-icon>Rights Management (MCN)</h2>
-                            <p><a href="#" class="text-primary hover:underline">Review MCN Applications</a></p>
-                            <p><a href="#" class="text-primary hover:underline">Manage Content ID</a></p>
-                            <p><a href="#" class="text-primary hover:underline">Claim Reports</a></p>
-                        </div>
-                        <div class="dashboard-card">
-                            <h2 class="dashboard-card-title"><ion-icon name="person-outline" class="mr-2"></ion-icon>Talent & HR Portal</h2>
-                             <p><a href="#" class="text-primary hover:underline">Manage Roster</a></p>
-                             <p><a href="#" class="text-primary hover:underline">Manage Staff Accounts</a></p>
-                        </div>
-                         <div class="dashboard-card">
-                            <h2 class="dashboard-card-title"><ion-icon name="cash-outline" class="mr-2"></ion-icon>Financial & Billing</h2>
-                            <p><a href="#" class="text-primary hover:underline">View All Transactions</a></p>
-                            <p><a href="#" class="text-primary hover:underline">Manage Invoices & Payments</a></p>
-                             <p><a href="#" class="text-primary hover:underline">Payout Processing</a></p>
-                             <p><a href="#" class="text-primary hover:underline">Revenue Reports</a></p>
-                        </div>
-                         <div class="dashboard-card">
-                            <h2 class="dashboard-card-title"><ion-icon name="chatbubbles-outline" class="mr-2"></ion-icon>Support & Ticketing</h2>
-                             <p><a href="#" class="text-primary hover:underline">View Support Tickets</a></p>
-                             <p><a href="#" class="text-primary hover:underline">Manage FAQs</a></p>
-                        </div>
-                        <div class="dashboard-card">
-                            <h2 class="dashboard-card-title"><ion-icon name="settings-outline" class="mr-2"></ion-icon>System Configuration</h2>
-                             <p><a href="#" class="text-primary hover:underline">Manage Services</a></p>
-                             <p><a href="#" class="text-primary hover-underline">Payment Gateway Settings</a></p>
-                             <p><a href="#" class="text-primary hover:underline">Email Templates</a></p>
-                             <p><a href="#" class="text-primary hover:underline">Website Settings</a></p>
-                        </div>
+                        <div class="dashboard-card"><h2 class="dashboard-card-title"><ion-icon name="people-outline" class="mr-2"></ion-icon>User & Access Control</h2><p><a href="#" class="text-primary hover:underline">Manage Users</a></p><p><a href="#" class="text-primary hover:underline">Manage Roles & Permissions</a></p></div>
+                         <div class="dashboard-card"><h2 class="dashboard-card-title"><ion-icon name="briefcase-outline" class="mr-2"></ion-icon>Client Portfolio Management</h2><p><a href="#" class="text-primary hover:underline">View All Clients</a></p><p><a href="#" class="text-primary hover:underline">View All Projects</a></p><p><a href="#" class="text-primary hover:underline">Assign Account Managers</a></p></div>
+                        <div class="dashboard-card"><h2 class="dashboard-card-title"><ion-icon name="musical-notes-outline" class="mr-2"></ion-icon>Music Operations</h2><p><a href="#" class="text-primary hover:underline">Review Music Submissions</a></p><p><a href="#" class="text-primary hover:underline">Manage Distribution Channels</a></p><p><a href="#" class="text-primary hover:underline">Royalty Reports</a></p></div>
+                         <div class="dashboard-card"><h2 class="dashboard-card-title"><ion-icon name="shield-checkmark-outline" class="mr-2"></ion-icon>Rights Management (MCN)</h2><p><a href="#" class="text-primary hover:underline">Review MCN Applications</a></p><p><a href="#" class="text-primary hover:underline">Manage Content ID</a></p><p><a href="#" class="text-primary hover:underline">Claim Reports</a></p></div>
+                        <div class="dashboard-card"><h2 class="dashboard-card-title"><ion-icon name="person-outline" class="mr-2"></ion-icon>Talent & HR Portal</h2><p><a href="#" class="text-primary hover:underline">Manage Roster</a></p><p><a href="#" class="text-primary hover:underline">Manage Staff Accounts</a></p></div>
+                         <div class="dashboard-card"><h2 class="dashboard-card-title"><ion-icon name="cash-outline" class="mr-2"></ion-icon>Financial & Billing</h2><p><a href="#" class="text-primary hover:underline">View All Transactions</a></p><p><a href="#" class="text-primary hover:underline">Manage Invoices & Payments</a></p><p><a href="#" class="text-primary hover:underline">Payout Processing</a></p><p><a href="#" class="text-primary hover:underline">Revenue Reports</a></p></div>
+                         <div class="dashboard-card"><h2 class="dashboard-card-title"><ion-icon name="chatbubbles-outline" class="mr-2"></ion-icon>Support & Ticketing</h2><p><a href="#" class="text-primary hover:underline">View Support Tickets</a></p><p><a href="#" class="text-primary hover:underline">Manage FAQs</a></p></div>
+                        <div class="dashboard-card"><h2 class="dashboard-card-title"><ion-icon name="settings-outline" class="mr-2"></ion-icon>System Configuration</h2><p><a href="#" class="text-primary hover:underline">Manage Services</a></p><p><a href="#" class="text-primary hover:underline">Payment Gateway Settings</a></p><p><a href="#" class="text-primary hover:underline">Email Templates</a></p><p><a href="#" class="text-primary hover:underline">Website Settings</a></p></div>
                      </div>
                  </section>
 
-                <!-- ===== Existing Pages (Profile, Chat, Bazaar, Music, MCN, etc.) ===== -->
-                <section id="page-profile" class="page-section"> /* ... Content remains same ... */ </section>
-                <section id="page-chat" class="page-section"> /* ... Content remains same ... */ </section>
-                <section id="page-bazaar" class="page-section"> /* ... Content remains same ... */ </section>
-                <section id="page-music" class="page-section"> /* ... Content remains same ... */ </section>
-                <section id="page-mcn" class="page-section"> /* ... Content remains same ... */ </section>
-                <section id="page-clients" class="page-section"> /* ... Content remains same ... */ </section>
-                <section id="page-team" class="page-section"> /* ... Content remains same ... */ </section>
-                <section id="page-faq" class="page-section"> /* ... Content remains same ... */ </section>
-                <section id="page-project-submit" class="page-section"> /* ... Content remains same ... */ </section>
+                <!-- ===== PURANE Pages (Profile, Chat, Bazaar, Music, MCN, etc.) ===== -->
+                <!-- Ye sabhi pages abhi bhi yahaan maujood hain aur links se accessible hain -->
+                
+                <!-- Page: Profile (Account Settings) -->
+                <section id="page-profile" class="page-section">
+                     <h1 class="text-3xl font-bold text-heading mb-6">My Profile / Account Settings</h1>
+                    <div class="bg-card border border-main rounded-lg shadow-lg p-6 max-w-2xl mx-auto">
+                        <div class="flex items-center space-x-4 mb-6"><img src="https://placehold.co/100x100/CBD5E1/FFFFFF?text=User" alt="Profile Picture" class="w-20 h-20 rounded-full" id="profile-pic-img"><div><button class="btn btn-secondary text-sm">Upload New Picture</button><p class="text-xs text-main mt-1">PNG, JPG, GIF (max 800x800px)</p></div></div>
+                        <form id="profile-form" class="space-y-4">
+                            <div><label class="form-label" for="profile-name">Naam</label><input class="form-input" type="text" id="profile-name" value="Aapka Naam"></div>
+                            <div><label class="form-label" for="profile-user-email">Email</label><input class="form-input" type="email" id="profile-user-email" value="user@example.com" disabled></div>
+                            <div class="text-right pt-4"><button type="submit" class="btn btn-primary">Save Changes</button></div>
+                        </form>
+                        <div class="border-t border-main mt-6 pt-6">
+                            <h3 class="text-lg font-semibold text-heading mb-4">Password Badlein</h3>
+                            <form id="password-form" class="space-y-4">
+                                <div><label class="form-label" for="current-password">Current Password</label><input class="form-input" type="password" id="current-password"></div>
+                                <div><label class="form-label" for="new-password">Naya Password</label><input class="form-input" type="password" id="new-password"></div>
+                                <div class="text-right pt-2"><button type="submit" class="btn btn-primary">Update Password</button></div>
+                            </form>
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- Page: AI Chat -->
+                <section id="page-chat" class="page-section">
+                    <h1 class="text-3xl font-bold text-heading mb-6">✨ AI Creator Chat</h1>
+                    <div class="bg-card border border-main rounded-lg shadow-lg max-w-3xl mx-auto">
+                        <div id="chat-messages" class="p-4 space-y-4 overflow-y-auto">
+                            <div class="chat-bubble chat-bubble-ai"><p>Namaste! Main R.S Films ka AI Assistant hoon...</p></div>
+                            <div id="chat-loader" class="chat-loader hidden"><span class="loader"></span></div>
+                        </div>
+                        <form id="chat-form" class="p-4 border-t border-main flex gap-3">
+                            <input type="text" id="chat-input" placeholder="AI Assistant se poochein..." class="form-input" autocomplete="off" required>
+                            <button type="submit" class="btn btn-primary"><ion-icon name="send-outline"></ion-icon></button>
+                        </form>
+                    </div>
+                </section>
+
+                <!-- Page: Bazaar -->
+                <section id="page-bazaar" class="page-section">
+                    <h1 class="text-3xl font-bold text-heading mb-6">Creator's Bazaar</h1>
+                    <div id="bazaar-filters" class="flex flex-wrap gap-2 mb-6">
+                        <button class="filter-btn active" data-filter="all">All</button>
+                        <button class="filter-btn" data-filter="psd">Poster PSDs</button>
+                        <button class="filter-btn" data-filter="lut">Cinematic LUTs</button>
+                        <button class="filter-btn" data-filter="editor">Video Editors</button>
+                        <button class="filter-btn" data-filter="designer">Designers</button>
+                    </div>
+                    <h2 class="text-2xl font-semibold text-heading mb-4">Digital Store (PSD Selling)</h2>
+                    <div id="bazaar-items" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-12">
+                        <!-- Products -->
+                        <div class="bazaar-item bg-card border border-main rounded-lg overflow-hidden shadow-sm" data-category="psd"><img src="https://placehold.co/600x400/3B82F6/FFFFFF?text=Poster+PSD" alt="Product" class="w-full h-32 object-cover"><div class="p-3"><h3 class="text-sm font-semibold text-heading truncate">Music Poster PSD Vol. 1</h3><div class="flex justify-between items-center mt-2"><p class="text-lg font-bold text-primary">$10</p><button class="btn btn-secondary text-xs py-1 px-2">Buy</button></div></div></div>
+                        <div class="bazaar-item bg-card border border-main rounded-lg overflow-hidden shadow-sm" data-category="lut"><img src="https://placehold.co/600x400/F59E0B/FFFFFF?text=Cinematic+LUTs" alt="Product" class="w-full h-32 object-cover"><div class="p-3"><h3 class="text-sm font-semibold text-heading truncate">Cinematic LUT Pack</h3><div class="flex justify-between items-center mt-2"><p class="text-lg font-bold text-primary">$25</p><button class="btn btn-secondary text-xs py-1 px-2">Buy</button></div></div></div>
+                        <div class="bazaar-item bg-card border border-main rounded-lg overflow-hidden shadow-sm" data-category="psd"><img src="https://placehold.co/600x400/10B981/FFFFFF?text=Vlog+Pack" alt="Product" class="w-full h-32 object-cover"><div class="p-3"><h3 class="text-sm font-semibold text-heading truncate">Vlogger Edit Pack</h3><div class="flex justify-between items-center mt-2"><p class="text-lg font-bold text-primary">$45</p><button class="btn btn-secondary text-xs py-1 px-2">Buy</button></div></div></div>
+                        <div class="bazaar-item bg-card border border-main rounded-lg overflow-hidden shadow-sm" data-category="psd"><img src="https://placehold.co/600x400/EF4444/FFFFFF?text=Sound+FX" alt="Product" class="w-full h-32 object-cover"><div class="p-3"><h3 class="text-sm font-semibold text-heading truncate">Pro Sound FX</h3><div class="flex justify-between items-center mt-2"><p class="text-lg font-bold text-primary">$19</p><button class="btn btn-secondary text-xs py-1 px-2">Buy</button></div></div></div>
+                        <div class="bazaar-item bg-card border border-main rounded-lg overflow-hidden shadow-sm" data-category="psd"><img src="https://placehold.co/600x400/6366F1/FFFFFF?text=Thumbnails" alt="Product" class="w-full h-32 object-cover"><div class="p-3"><h3 class="text-sm font-semibold text-heading truncate">10x Thumbnail PSD</h3><div class="flex justify-between items-center mt-2"><p class="text-lg font-bold text-primary">$15</p><button class="btn btn-secondary text-xs py-1 px-2">Buy</button></div></div></div>
+                    </div>
+                    <h2 class="text-2xl font-semibold text-heading mb-4">Hire a Professional</h2>
+                    <div id="hire-items" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <!-- Professionals -->
+                        <div class="hire-item bg-card border border-main rounded-lg p-4 text-center shadow-sm" data-category="editor"><img src="https://placehold.co/100x100/3B82F6/FFFFFF?text=Rohan" alt="Pro" class="w-20 h-20 rounded-full mx-auto mb-3"><h3 class="text-base font-semibold text-heading">Rohan Sharma</h3><p class="text-primary font-medium text-xs mb-2">Pro Video Editor</p><button class="btn btn-primary w-full text-sm py-2 px-3">Hire</button></div>
+                        <div class="hire-item bg-card border border-main rounded-lg p-4 text-center shadow-sm" data-category="designer"><img src="https://placehold.co/100x100/10B981/FFFFFF?text=Priya" alt="Pro" class="w-20 h-20 rounded-full mx-auto mb-3"><h3 class="text-base font-semibold text-heading">Priya Singh</h3><p class="text-primary font-medium text-xs mb-2">Graphic Designer</p><button class="btn btn-primary w-full text-sm py-2 px-3">Hire</button></div>
+                        <div class="hire-item bg-card border border-main rounded-lg p-4 text-center shadow-sm" data-category="editor"><img src="https://placehold.co/100x100/F59E0B/FFFFFF?text=Kabir" alt="Pro" class="w-20 h-20 rounded-full mx-auto mb-3"><h3 class="text-base font-semibold text-heading">Kabir Khan</h3><p class="text-primary font-medium text-xs mb-2">Music Producer</p><button class="btn btn-primary w-full text-sm py-2 px-3">Hire</button></div>
+                         <div class="hire-item bg-card border border-main rounded-lg p-4 text-center shadow-sm" data-category="designer"><img src="https://placehold.co/100x100/6366F1/FFFFFF?text=Mike" alt="Pro" class="w-20 h-20 rounded-full mx-auto mb-3"><h3 class="text-base font-semibold text-heading">Mike D.</h3><p class="text-primary font-medium text-xs mb-2">Thumbnail Specialist</p><button class="btn btn-primary w-full text-sm py-2 px-3">Hire</button></div>
+                    </div>
+                </section>
+                
+                <!-- Page: Music Submission Form -->
+                <section id="page-music" class="page-section">
+                    <h1 class="text-3xl font-bold text-heading mb-6">Music Distribution</h1>
+                    <div class="bg-card border border-main rounded-lg shadow-lg p-6 max-w-2xl mx-auto">
+                        <h3 class="text-xl font-semibold text-heading mb-4">Music Distribution Form</h3>
+                        <form id="music-dist-form" class="space-y-4">
+                            <div><label class="form-label" for="artist-name">Artist Name</label><input class="form-input" type="text" id="artist-name" name="artist-name" required></div>
+                            <div><label class="form-label" for="song-title">Song Title</label><input class="form-input" type="text" id="song-title" name="song-title" required></div>
+                            <div class="pt-2"><button type="button" id="generate-tweet-btn" class="btn btn-secondary w-full"><ion-icon name="sparkles-outline" class="mr-2"></ion-icon>✨ Generate Promotion Tweet</button></div>
+                            <div id="music-loader" class="hidden text-center p-4"><span class="loader"></span></div>
+                            <div id="tweet-result-container" class="hidden"><label class="form-label">Generated Tweet:</label><textarea id="tweet-result" class="form-input" rows="4"></textarea></div>
+                            <div class="text-right pt-4"><button type="submit" class="btn btn-primary">Submit Song</button></div>
+                        </form>
+                    </div>
+                </section>
+        
+                <!-- Page: MCN Application Form -->
+                <section id="page-mcn" class="page-section">
+                    <h1 class="text-3xl font-bold text-heading mb-6">MCN Application</h1>
+                    <div class="bg-card border border-main rounded-lg shadow-lg p-6 max-w-2xl mx-auto">
+                        <h3 class="text-xl font-semibold text-heading mb-4">MCN Application Form</h3>
+                        <form id="mcn-apply-form" class="space-y-4">
+                            <div><label class="form-label" for="channel-name">Channel Name</label><input class="form-input" type="text" id="channel-name" name="channel-name" required></div>
+                            <div><label class="form-label" for="channel-link">Channel Link (URL)</label><input class="form-input" type="url" id="channel-link" name="channel-link" required></div>
+                            <div class="pt-2"><button type="button" id="generate-ideas-btn" class="btn btn-secondary w-full"><ion-icon name="sparkles-outline" class="mr-2"></ion-icon>✨ Suggest 5 Video Ideas</button></div>
+                            <div id="mcn-loader" class="hidden text-center p-4"><span class="loader"></span></div>
+                            <div id="ideas-result-container" class="hidden"><label class="form-label">Generated Ideas:</label><div id="ideas-result" class="p-4 bg-app border border-main rounded-lg text-main"></div></div>
+                            <div class="text-right pt-4"><button type="submit" class="btn btn-primary">Submit Application</button></div>
+                        </form>
+                    </div>
+                </section>
+
+                <!-- Page: Clients (Original) -->
+                <section id="page-clients" class="page-section">
+                    <h1 class="text-3xl font-bold text-heading mb-6">Humare Clients</h1>
+                    <p class="text-main mb-8 max-w-2xl">Humein garv hai ki humne in behtareen creators aur brands ke saath kaam kiya hai...</p>
+                    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
+                        <!-- Client Logos -->
+                        <div class="bg-card border border-main rounded-lg p-6 flex items-center justify-center h-24 shadow-sm"><img src="https://placehold.co/150x50/CBD5E1/334155?text=Client+Logo+1" alt="Client Logo 1" class="h-8"></div>
+                        <div class="bg-card border border-main rounded-lg p-6 flex items-center justify-center h-24 shadow-sm"><img src="https://placehold.co/150x50/CBD5E1/334155?text=Client+Logo+2" alt="Client Logo 2" class="h-8"></div>
+                        <div class="bg-card border border-main rounded-lg p-6 flex items-center justify-center h-24 shadow-sm"><img src="https://placehold.co/150x50/CBD5E1/334155?text=Client+Logo+3" alt="Client Logo 3" class="h-8"></div>
+                        <div class="bg-card border border-main rounded-lg p-6 flex items-center justify-center h-24 shadow-sm"><img src="https://placehold.co/150x50/CBD5E1/334155?text=Client+Logo+4" alt="Client Logo 4" class="h-8"></div>
+                        <div class="bg-card border border-main rounded-lg p-6 flex items-center justify-center h-24 shadow-sm"><img src="https://placehold.co/150x50/CBD5E1/334155?text=Client+Logo+5" alt="Client Logo 5" class="h-8"></div>
+                        <div class="bg-card border border-main rounded-lg p-6 flex items-center justify-center h-24 shadow-sm"><img src="https://placehold.co/150x50/CBD5E1/334155?text=Client+Logo+6" alt="Client Logo 6" class="h-8"></div>
+                         <div class="bg-card border border-main rounded-lg p-6 flex items-center justify-center h-24 shadow-sm"><img src="https://placehold.co/150x50/CBD5E1/334155?text=Client+Logo+7" alt="Client Logo 7" class="h-8"></div>
+                        <div class="bg-card border border-main rounded-lg p-6 flex items-center justify-center h-24 shadow-sm"><img src="https://placehold.co/150x50/CBD5E1/334155?text=Client+Logo+8" alt="Client Logo 8" class="h-8"></div>
+                        <div class="bg-card border border-main rounded-lg p-6 flex items-center justify-center h-24 shadow-sm"><img src="https://placehold.co/150x50/CBD5E1/334155?text=Client+Logo+9" alt="Client Logo 9" class="h-8"></div>
+                        <div class="bg-card border border-main rounded-lg p-6 flex items-center justify-center h-24 shadow-sm"><img src="https://placehold.co/150x50/CBD5E1/334155?text=Client+Logo+10" alt="Client Logo 10" class="h-8"></div>
+                        <div class="bg-card border border-main rounded-lg p-6 flex items-center justify-center h-24 shadow-sm"><img src="https://placehold.co/150x50/CBD5E1/334155?text=Client+Logo+11" alt="Client Logo 11" class="h-8"></div>
+                        <div class="bg-card border border-main rounded-lg p-6 flex items-center justify-center h-24 shadow-sm"><img src="https://placehold.co/150x50/CBD5E1/334155?text=Client+Logo+12" alt="Client Logo 12" class="h-8"></div>
+                    </div>
+                </section>
+
+                <!-- Page: Team (Original) -->
+                <section id="page-team" class="page-section">
+                    <h1 class="text-3xl font-bold text-heading mb-6">Humari Core Team</h1>
+                    <p class="text-main mb-8 max-w-2xl">Humari safalta ke peeche in experts ka haath hai...</p>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <!-- Team Members -->
+                        <div class="bg-card border border-main rounded-lg p-6 shadow-sm text-center"><img src="https://placehold.co/120x120/3B82F6/FFFFFF?text=CEO" alt="Team Member" class="w-32 h-32 rounded-full mx-auto mb-4 shadow-lg"><h3 class="text-xl font-semibold text-heading">R.S. (Aapka Naam)</h3><p class="text-primary font-medium mb-2">Founder & CEO</p><p class="text-main text-sm">"Mera mission har Indian creator ko global stage par pahunchana hai."</p></div>
+                        <div class="bg-card border border-main rounded-lg p-6 shadow-sm text-center"><img src="https://placehold.co/120x120/10B981/FFFFFF?text=Lead" alt="Team Member" class="w-32 h-32 rounded-full mx-auto mb-4 shadow-lg"><h3 class="text-xl font-semibold text-heading">Priya Singh</h3><p class="text-primary font-medium mb-2">Head of Design</p><p class="text-main text-sm">"Har poster ek kahani kehta hai..."</p></div>
+                        <div class="bg-card border border-main rounded-lg p-6 shadow-sm text-center"><img src="https://placehold.co/120x120/EF4444/FFFFFF?text=YT" alt="Team Member" class="w-32 h-32 rounded-full mx-auto mb-4 shadow-lg"><h3 class="text-xl font-semibold text-heading">Aman Verma</h3><p class="text-primary font-medium mb-2">YouTube Strategist</p><p class="text-main text-sm">"Aap content banayein, algorithm hum par chhod dein."</p></div>
+                         <div class="bg-card border border-main rounded-lg p-6 shadow-sm text-center"><img src="https://placehold.co/120x120/F59E0B/FFFFFF?text=Mgr" alt="Team Member" class="w-32 h-32 rounded-full mx-auto mb-4 shadow-lg"><h3 class="text-xl font-semibold text-heading">Rohan Mehra</h3><p class="text-primary font-medium mb-2">Head of Music</p><p class="text-main text-sm">"Aapka music deserves to be heard..."</p></div>
+                        <div class="bg-card border border-main rounded-lg p-6 shadow-sm text-center"><img src="https://placehold.co/120x120/6366F1/FFFFFF?text=MCN" alt="Team Member" class="w-32 h-32 rounded-full mx-auto mb-4 shadow-lg"><h3 class="text-xl font-semibold text-heading">Kabir Khan</h3><p class="text-primary font-medium mb-2">MCN Manager</p><p class="text-main text-sm">"Hum creators ko brand deals se bachaate hain."</p></div>
+                        <div class="bg-card border border-main rounded-lg p-6 shadow-sm text-center"><img src="https://placehold.co/120x120/EC4899/FFFFFF?text=HR" alt="Team Member" class="w-32 h-32 rounded-full mx-auto mb-4 shadow-lg"><h3 class="text-xl font-semibold text-heading">Sana Ali</h3><p class="text-primary font-medium mb-2">Community Manager</p><p class="text-main text-sm">"Humari community humari strength hai."</p></div>
+                    </div>
+                </section>
+
+                <!-- Page: FAQ (Original) -->
+                <section id="page-faq" class="page-section">
+                    <h1 class="text-3xl font-bold text-heading mb-6">Aksar Pooche Jaane Waale Sawaal (FAQ)</h1>
+                    <div class="bg-card border border-main rounded-lg shadow-lg max-w-3xl mx-auto">
+                        <!-- FAQ Items -->
+                        <details class="faq-item border-b border-main"><summary>Music distribution mein kitna samay lagta hai?</summary><div class="faq-content"><p>Aapka gaana submit karne ke baad... 2 se 5 business days lag sakte hain.</p></div></details>
+                        <details class="faq-item border-b border-main"><summary>Aapki MCN join karne ke kya fayde hain?</summary><div class="faq-content"><p>MCN join karne se aapko copyright protection, brand deals, aur dedicated support milta hai.</p></div></details>
+                         <details class="faq-item border-b border-main"><summary>Kya main sirf poster design karwa sakta hoon?</summary><div class="faq-content"><p>Bilkul! Aap humari kisi bhi service ko alag se le sakte hain.</p></div></details>
+                         <details class="faq-item border-b border-main"><summary>AI Chatbot kitna accurate hai?</summary><div class="faq-content"><p>Humara AI Chatbot (Gemini par आधारित) latest data par trained hai...</p></div></details>
+                         <details class="faq-item border-b border-main"><summary>Mujhe meri payment kab milegi?</summary><div class="faq-content"><p>Sabhi platforms se revenue collect hone ke baad, hum har mahine ki 15 tareekh ko payout process karte hain.</p></div></details>
+                        <details class="faq-item border-b border-main"><summary>Kya main 'Bazaar' par apne PSDs bech sakta hoon?</summary><div class="faq-content"><p>Abhi yeh feature available nahi hai, lekin hum jald hi ek "Creator Vendor" program shuru karne waale hain.</p></div></details>
+                        <details class="faq-item"><summary>Channel management plan mein kya-kya shaamil hai?</summary><div class="faq-content"><p>"Services" page par diye gaye pricing table mein aap har plan ki details dekh sakte hain.</p></div></details>
+                    </div>
+                </section>
+                
+                <!-- Page: Project Submission (Original) -->
+                 <section id="page-project-submit" class="page-section">
+                    <h1 class="text-3xl font-bold text-heading mb-6">Naya Project Submit Karein</h1>
+                     <div class="bg-card border border-main rounded-lg shadow-lg p-6 md:p-8 max-w-3xl mx-auto">
+                        <form id="project-submit-form" class="space-y-4">
+                            <div><label class="form-label" for="project-title">Project Title</label><input class="form-input" type="text" id="project-title" required placeholder="E.g., Music Video Editing for 'Song Name'"></div>
+                            <div>
+                                <label class="form-label" for="project-service">Select Service</label>
+                                <select id="project-service" class="form-select" required>
+                                    <option value="">-- Service Chunein --</option>
+                                    <option value="video-editing">Video Editing</option>
+                                    <option value="poster-design">Poster Design</option>
+                                    <option value="music-distribution">Music Distribution</option>
+                                    <option value="channel-management">Channel Management</option>
+                                    <option value="mcn">MCN</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                            <div><label class="form-label" for="project-description">Project Description</label><textarea class="form-input" id="project-description" rows="5" required placeholder="Project ke baare mein detail mein batayein..."></textarea></div>
+                            <div><label class="form-label" for="project-requirements">Requirements / Specific Instructions</label><textarea class="form-input" id="project-requirements" rows="3" placeholder="Koi khaas zaroorat ya instruction? (Optional)"></textarea></div>
+                            <div><label class="form-label" for="project-files">Files Upload Karein (Audio/Video/Reference)</label><input type="file" id="project-files" class="form-input !p-2 !border-dashed" multiple><p class="text-xs text-main mt-1">Aap ek ya zyada files upload kar sakte hain. (Yeh sirf UI hai)</p></div>
+                             <div class="text-right pt-4"><button type="submit" class="btn btn-primary">Submit Project</button></div>
+                        </form>
+                     </div>
+                 </section>
         
             </main>
             
             <!-- ===== Footer ===== -->
-            <footer id="main-footer" class="w-full border-t border-main mt-16 py-8"> /* ... */ </footer>
+            <footer id="main-footer" class="w-full border-t border-main mt-16 py-8">
+                 <div class="container mx-auto px-4 text-center">
+                    <p class="text-main text-sm">© 2025 R.S Films Group. All rights reserved.</p>
+                </div>
+            </footer>
         </div> <!-- End logged-in-view -->
 
     </div> <!-- End auth-view-container -->
@@ -769,8 +1245,25 @@
       Global Scripts (Navigation, Auth Simulation, Dropdowns, Page Switching)
     -->
     <script>
+        // --- Global State ---
         let previousPage = 'page-home'; 
-        let userRole = 'client'; // Default role after login
+        let userRole = 'client'; // Default role
+
+        // --- Global Utility Functions ---
+        window.showMessage = (text, isSuccess = false) => {
+             const msgBox = document.getElementById('message-box');
+             const msgText = document.getElementById('message-text');
+             if (!msgBox || !msgText) { console.error("Message box elements not found!"); return; }
+             msgText.textContent = text;
+             msgBox.className = `fixed top-20 right-5 z-[100] p-4 rounded-lg shadow-lg ${isSuccess ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`;
+             msgBox.classList.remove('hidden');
+             setTimeout(() => { msgBox.classList.add('hidden'); }, 3000);
+         };
+
+        function closeMobileMenu() {
+             const mobileMenu = document.getElementById('mobile-menu');
+             if (mobileMenu) mobileMenu.classList.add('hidden');
+        }
 
         // --- Page Switching ---
         window.showPage = function(pageId) {
@@ -778,122 +1271,119 @@
             const activePage = document.getElementById(pageId);
             if (activePage) {
                 activePage.classList.add('page-active');
-                 // Don't update previousPage if it's a detail page or dashboard
-                if (!pageId.includes('detail') && !pageId.includes('dashboard')) {
+                if (!pageId.includes('detail') && !pageId.includes('dashboard') && !pageId.includes('ledger')) {
                      previousPage = pageId; 
                 }
             } else {
-                 document.getElementById('page-home').classList.add('page-active');
+                 console.error(`Page with ID "${pageId}" not found. Falling back to home.`);
+                 const homePage = document.getElementById('page-home');
+                 if(homePage) homePage.classList.add('page-active');
                  previousPage = 'page-home';
             }
-            // Update nav links
-            document.querySelectorAll('.nav-link').forEach(link => link.classList.toggle('active', link.dataset.page === pageId));
-            closeMobileMenu(); // Close mobile menu on page change
+            document.querySelectorAll('.nav-link').forEach(link => {
+                if(link.dataset.page) link.classList.toggle('active', link.dataset.page === pageId)
+            });
+            closeMobileMenu(); 
             window.scrollTo(0, 0);
         }
 
-        // --- Go Back ---
         window.goBack = function() { showPage(previousPage || 'page-home'); }
 
-        // --- Mobile Menu ---
-        function closeMobileMenu() {
-             const mobileMenu = document.getElementById('mobile-menu');
-             if (mobileMenu) mobileMenu.classList.add('hidden');
+        // --- Authentication & Role Logic ---
+        function showAuthForm(formIdToShow) {
+            document.querySelectorAll('#auth-view > div > div').forEach(formContainer => {
+                if(formContainer) formContainer.classList.add('hidden');
+            });
+            const formToShow = document.getElementById(formIdToShow);
+            if (formToShow) {
+                formToShow.classList.remove('hidden');
+            } else {
+                 const loginForm = document.getElementById('login-form-container');
+                 if(loginForm) loginForm.classList.remove('hidden');
+            }
         }
 
-        // --- Dropdowns ---
-        document.addEventListener('click', function(e) { /* ... Same logic ... */ });
-
-        // --- Blog Detail (Mock) ---
-        const blogPostData = { /* ... Same data ... */ };
-        window.showBlogDetail = function(postId) { /* ... Same function ... */ };
-
-        // --- Service Detail (Mock - Enhanced) ---
-         const serviceDetailData = {
-            'channel-management': { title: "Channel Management", category: "YouTube Services", desc: "<p>Hum aapke YouTube aur social media channels ko poori tarah manage karte hain. Ismein content strategy banana, video SEO (titles, descriptions, tags), community management, aur analytics tracking shaamil hai. Humara lakshya aapke subscribers aur watch time ko badhaana hai.</p><h3>Key Features:</h3><ul><li>Content Strategy & Calendar</li><li>Video SEO Optimization</li><li>Thumbnail Creation Guidance</li><li>Audience Engagement</li><li>Monthly Analytics Reports</li></ul>", pricing: "Starts from $299/month (Gold Plan)", img1: "https://placehold.co/800x600/3B82F6/FFFFFF?text=Channel+Growth", img2:"https://placehold.co/800x600/1D4ED8/FFFFFF?text=Analytics" },
-            'music-distribution': { title: "Global Music Distribution", category: "Music Services", desc: "<p>Apne sangeet ko duniya bhar mein pahunchayein. Hum aapke gaano ko Spotify, Apple Music, JioSaavn, Gaana, YouTube Music, Amazon Music, Instagram/Facebook, TikTok, aur 150 se zyada platforms par distribute karte hain. Aapko 100% royalty aur detailed monthly reports milti hain.</p><h3>Platforms Included:</h3><ul><li>Spotify, Apple Music, YouTube Music</li><li>JioSaavn, Gaana, Wynk Music</li><li>Amazon Music, Instagram, Facebook, TikTok</li><li>And 150+ more...</li></ul>", pricing: "Starting from 80% Royalty Share", img1: "https://placehold.co/800x600/10B981/FFFFFF?text=Spotify+Apple+Music", img2:"https://placehold.co/800x600/047857/FFFFFF?text=Global+Reach" },
-            'mcn': { title: "YouTube MCN & Rights Management", category: "YouTube Services", desc: "<p>Humari MCN join karke apne content ko protect karein aur monetization badhayein. Hum aapko Content ID dete hain taaki koi aapka video/audio copy na kar sake aur agar kare toh revenue aapko mile. Saath hi, brand collaborations aur sponsorship deals paane mein hum aapki madad karte hain.</p><h3>Benefits:</h3><ul><li>Content ID Protection</li><li>Copyright Claim Management</li><li>Increased Monetization Opportunities</li><li>Brand Deal Facilitation</li><li>Dedicated Support</li></ul>", pricing: "Based on Channel Performance & Revenue Share", img1: "https://placehold.co/800x600/F59E0B/FFFFFF?text=Content+ID", img2:"https://placehold.co/800x600/B45309/FFFFFF?text=Brand+Deals" },
-            'digital-marketing': { title: "360° Digital Marketing", category: "Marketing Services", desc: "<p>Aapke music, channel, ya brand ko online promote karne ke liye complete solutions. Hum Social Media Marketing (SMM), Search Engine Optimization (SEO), Google Ads, Facebook/Instagram Ads, aur Influencer Marketing campaigns manage karte hain.</p><h3>Services:</h3><ul><li>Social Media Management</li><li>Targeted Ad Campaigns (Google, FB, Insta)</li><li>Content Marketing & SEO</li><li>Influencer Outreach</li><li>Performance Analytics</li></ul>", pricing: "Custom Packages Available", img1: "https://placehold.co/800x600/EC4899/FFFFFF?text=Social+Media+Growth", img2:"https://placehold.co/800x600/9D174D/FFFFFF?text=Ad+Campaigns" },
-             'design-editing': { title: "Creative Services", category: "Creative Services", desc: "<p>First impression zaroori hai. Humari team professional video editors aur graphic designers ki hai jo aapke liye engaging videos, attractive thumbnails, unique posters, album art, social media graphics, aur brand identity design karte hain.</p><h3>What We Offer:</h3><ul><li>Video Editing (Vlogs, Music Videos, Ads)</li><li>Graphic Design (Posters, Thumbnails, Album Art)</li><li>Motion Graphics</li><li>Brand Logo & Identity</li></ul>", pricing: "Per Project Basis / Included in Platinum Plan", img1: "https://placehold.co/800x600/EF4444/FFFFFF?text=Video+Editing", img2:"https://placehold.co/800x600/991B1B/FFFFFF?text=Poster+Design" },
-             'talent-acquisition': { title: "Talent Acquisition", category: "Creative Services", desc: "<p>Apne project ke liye sahi talent dhoondhna mushkil ho sakta hai. Hum actors, models, voice-over artists, singers, musicians, aur production crew ko source karne mein aapki madad karte hain.</p>", pricing: "Commission Based / Retainer", img1: "https://placehold.co/800x600/8B5CF6/FFFFFF?text=Find+Actors", img2:"https://placehold.co/800x600/5B21B6/FFFFFF?text=Casting+Call" },
-             // Add sample projects from portfolio if they have detail pages
-             'sample-project-1': { title: "Music Video - 'Dil Se'", category: "Music Video Production & Editing", desc: "<p>Client ke vision ko samajhkar humne concept se lekar final edit tak poora music video produce kiya. Ismein location scouting, casting, shooting, aur post-production (editing, color grading, VFX) shaamil tha.</p>", pricing: "Project Budget: $XXXX", img1: "https://placehold.co/800x600/3B82F6/FFFFFF?text=Music+Video+Scene", img2:"https://placehold.co/800x600/1D4ED8/FFFFFF?text=Behind+The+Scenes" },
-             // Add more...
-         };
-         window.showServiceDetail = function(serviceId) {
-             const data = serviceDetailData[serviceId] || serviceDetailData['channel-management']; 
-             document.getElementById('service-detail-title').textContent = data.title;
-             document.getElementById('service-detail-category').textContent = data.category;
-             document.getElementById('service-detail-desc').innerHTML = data.desc;
-             document.getElementById('service-detail-pricing').textContent = data.pricing;
-             document.getElementById('service-detail-img1').src = data.img1;
-             document.getElementById('service-detail-img2').src = data.img2;
-             // Reset related services or load dynamically if needed
-             showPage('page-service-detail');
-         }
-
-        // --- Authentication UI Logic (Simulation) ---
-        function showAuthForm(formIdToShow) { /* ... Same as before ... */ }
-
-        function login(event) {
+        window.login = function(event) {
              event.preventDefault(); 
              const emailInput = document.getElementById('login-email');
              const roleSelect = document.getElementById('login-role');
              const email = emailInput.value;
-             userRole = roleSelect.value; // Store selected role
+             userRole = roleSelect.value; 
              
-             if (!email) { showMessage("Please enter email.", false); return; }
+             if (!email) { window.showMessage("Please enter email.", false); return; }
              
              document.getElementById('auth-view-container').classList.remove('auth-active');
              document.getElementById('auth-view-container').classList.add('logged-in');
              
              // Update UI based on logged-in state
-             document.getElementById('profile-email').textContent = email; 
-             document.getElementById('profile-role').textContent = userRole.charAt(0).toUpperCase() + userRole.slice(1); // Display role
-             document.getElementById('profile-menu-container').classList.remove('hidden');
-             document.getElementById('portal-login-btn').classList.add('hidden');
-              document.getElementById('mobile-profile-links').classList.remove('hidden');
-              document.getElementById('mobile-login-link').classList.add('hidden');
+             const profileEmailEl = document.getElementById('profile-email');
+             const profileRoleEl = document.getElementById('profile-role');
+             const profileMenuContainer = document.getElementById('profile-menu-container');
+             const portalLoginBtn = document.getElementById('portal-login-btn');
+             const mobileProfileLinks = document.getElementById('mobile-profile-links');
+             const mobileLoginLink = document.getElementById('mobile-login-link');
+             const clientNameEl = document.getElementById('client-name-placeholder');
 
+             if (profileEmailEl) profileEmailEl.textContent = email; 
+             if (profileRoleEl) profileRoleEl.textContent = userRole.charAt(0).toUpperCase() + userRole.slice(1);
+             if (clientNameEl) clientNameEl.textContent = email.split('@')[0]; // Set name in dashboard
+             if (profileMenuContainer) profileMenuContainer.classList.remove('hidden');
+             if (portalLoginBtn) portalLoginBtn.classList.add('hidden');
+             if (mobileProfileLinks) mobileProfileLinks.classList.remove('hidden');
+             if (mobileLoginLink) mobileLoginLink.classList.add('hidden');
 
-             // Show appropriate dashboard link
              const dashboardLink = document.getElementById('dashboard-link');
               const mobileDashboardLink = document.getElementById('mobile-dashboard-link');
-             if (userRole === 'client' || userRole === 'artist') {
-                dashboardLink.textContent = "Client Dashboard";
-                mobileDashboardLink.textContent = "Client Dashboard";
-             } else if (userRole === 'manager') {
-                 dashboardLink.textContent = "Manager Dashboard";
-                 mobileDashboardLink.textContent = "Manager Dashboard";
-             } else { // admin
-                 dashboardLink.textContent = "Admin Dashboard";
-                 mobileDashboardLink.textContent = "Admin Dashboard";
+             if (dashboardLink && mobileDashboardLink) {
+                 if (userRole === 'client' || userRole === 'artist') {
+                    dashboardLink.textContent = "Client Dashboard";
+                    mobileDashboardLink.textContent = "Client Dashboard";
+                 } else if (userRole === 'manager') {
+                     dashboardLink.textContent = "Manager Dashboard";
+                     mobileDashboardLink.textContent = "Manager Dashboard";
+                 } else { // admin
+                     dashboardLink.textContent = "Admin Dashboard";
+                     mobileDashboardLink.textContent = "Admin Dashboard";
+                 }
              }
 
-             showPage('page-home'); // ALWAYS show home page after login
-             showMessage("Login Successful! Role: " + userRole, true);
+             showPage('page-home'); 
+             window.showMessage("Login Successful! Role: " + userRole, true);
         }
 
-        function signup(event) { /* ... Same as before ... */ }
-        function forgotPassword(event) { /* ... Same as before ... */ }
+        window.signup = function(event) { 
+            event.preventDefault();
+             window.showMessage("Signup Successful! Please login.", true);
+             showAuthForm('login-form-container');
+        }
+        window.forgotPassword = function(event) { 
+             event.preventDefault();
+             window.showMessage("Password reset link sent (simulation).", true);
+             showAuthForm('login-form-container');
+         }
 
         window.logout = function() {
             document.getElementById('auth-view-container').classList.add('auth-active');
             document.getElementById('auth-view-container').classList.remove('logged-in');
             
-            // Update UI
-            document.getElementById('profile-menu-container').classList.add('hidden');
-            document.getElementById('portal-login-btn').classList.remove('hidden');
-            document.getElementById('mobile-profile-links').classList.add('hidden');
-            document.getElementById('mobile-login-link').classList.remove('hidden');
+            const profileMenuContainer = document.getElementById('profile-menu-container');
+             const portalLoginBtn = document.getElementById('portal-login-btn');
+             const mobileProfileLinks = document.getElementById('mobile-profile-links');
+             const mobileLoginLink = document.getElementById('mobile-login-link');
+             const loginEmail = document.getElementById('login-email');
+             const loginPassword = document.getElementById('login-password');
+
+             if(profileMenuContainer) profileMenuContainer.classList.add('hidden');
+             if(portalLoginBtn) portalLoginBtn.classList.remove('hidden');
+             if(mobileProfileLinks) mobileProfileLinks.classList.add('hidden');
+             if(mobileLoginLink) mobileLoginLink.classList.remove('hidden');
 
             showAuthForm('login-form-container'); 
-            document.getElementById('login-email').value = '';
-            document.getElementById('login-password').value = '';
+            if(loginEmail) loginEmail.value = '';
+            if(loginPassword) loginPassword.value = '';
             closeMobileMenu();
         }
 
-        // NAYA: Show correct dashboard based on role
         window.showDashboard = function() {
             if (userRole === 'client' || userRole === 'artist') {
                 showPage('page-client-dashboard');
@@ -904,93 +1394,417 @@
             }
         }
 
-        // --- Initial Setup on DOM Load ---
+        // --- Mock Data Definitions ---
+        const blogPostData = {
+             1: { title: "YouTube SEO 2025: Video Rank Karne Ke 5 Tareeke", author: "Aman Verma", authorImg: "https://placehold.co/40x40/EF4444/FFFFFF?text=AV", date: "Oct 20, 2025", image: "https://placehold.co/1200x600/3B82F6/FFFFFF?text=YouTube+SEO", content: `<p>YouTube par success paane ke liye achha content banana hi kaafi nahi hai. Aapka content logo tak pahunchna bhi chahiye. Yahaan par SEO (Search Engine Optimization) kaam aata hai. Is article mein hum 2025 ke latest trends ke hisaab se 5 advanced tareekon par baat karenge.</p><h2>1. Keyword Research (Sahi Shabh Chunein)</h2><p>Log kya search kar rahe hain? 'VidIQ' ya 'TubeBuddy' jaise tools ka istemaal karke high-traffic aur low-competition keywords dhoondhein...</p><h2>2. Thumbnail Psychology</h2><p>Aapka thumbnail hi aapka "digital poster" hai...</p>...` },
+             2: { title: "Music Promotion: Spotify Par Followers Kaise Badhayein", author: "Rohan Mehra", authorImg: "https://placehold.co/40x40/F59E0B/FFFFFF?text=RM", date: "Oct 18, 2025", image: "https://placehold.co/1200x600/10B981/FFFFFF?text=Music+Promotion", content: `<p>Gaana release kar diya? Badhaai ho! Ab kaam hai use logo tak pahunchana...</p><h2>1. Spotify for Artists (Verify Hona)</h2><p>Sabse pehla kadam hai apni profile ko 'Spotify for Artists' par claim karna...</p>...` },
+             3: { title: "AI Video Editing: Aapka Samay Bachane Waale Tools", author: "Priya Singh", authorImg: "https://placehold.co/40x40/10B981/FFFFFF?text=PS", date: "Oct 15, 2025", image: "https://placehold.co/1200x600/F59E0B/FFFFFF?text=AI+Editing", content: `<p>Video editing mein ghanto lag jaate hain, khaaskar agar aap content creator hain...</p><h2>1. AI Silence Remover (Automatic Cuts)</h2><p>Tools jaise 'Davinci Resolve Studio' ya 'Opus Clip' aapke video se automatic saare 'silences' ko kaat (cut) kar dete hain...</p>...` }
+        };
+        const serviceDetailData = {
+            'channel-management': { title: "Channel Management", category: "YouTube Services", desc: "<p>Hum aapke YouTube aur social media channels ko poori tarah manage karte hain...</p><h3>Key Features:</h3><ul><li>Content Strategy & Calendar</li><li>Video SEO Optimization</li><li>...</li></ul>", pricing: "Starts from $299/month (Gold Plan)", img1: "https://placehold.co/800x600/3B82F6/FFFFFF?text=Channel+Growth", img2:"https://placehold.co/800x600/1D4ED8/FFFFFF?text=Analytics" },
+            'music-distribution': { title: "Global Music Distribution", category: "Music Services", desc: "<p>Apne sangeet ko duniya bhar mein pahunchayein. Hum aapke gaano ko Spotify, Apple Music, JioSaavn, Gaana, YouTube Music...</p><h3>Platforms Included:</h3><ul><li>Spotify, Apple Music, YouTube Music</li><li>...</li></ul>", pricing: "Starting from 80% Royalty Share", img1: "https://placehold.co/800x600/10B981/FFFFFF?text=Spotify+Apple+Music", img2:"https://placehold.co/800x600/047857/FFFFFF?text=Global+Reach" },
+            'mcn': { title: "YouTube MCN & Rights Management", category: "YouTube Services", desc: "<p>Humari MCN join karke apne content ko protect karein...</p><h3>Benefits:</h3><ul><li>Content ID Protection</li><li>Copyright Claim Management</li><li>...</li></ul>", pricing: "Based on Channel Performance", img1: "https://placehold.co/800x600/F59E0B/FFFFFF?text=Content+ID", img2:"https://placehold.co/800x600/B45309/FFFFFF?text=Brand+Deals" },
+            'digital-marketing': { title: "360° Digital Marketing", category: "Marketing Services", desc: "<p>Aapke music, channel, ya brand ko online promote karne ke liye complete solutions...</p><h3>Services:</h3><ul><li>Social Media Management</li><li>Targeted Ad Campaigns...</li></ul>", pricing: "Custom Packages Available", img1: "https://placehold.co/800x600/EC4899/FFFFFF?text=Social+Media+Growth", img2:"https://placehold.co/800x600/9D174D/FFFFFF?text=Ad+Campaigns" },
+            'design-editing': { title: "Creative Services", category: "Creative Services", desc: "<p>First impression zaroori hai...</p><h3>What We Offer:</h3><ul><li>Video Editing (Vlogs, Music Videos, Ads)</li><li>...</li></ul>", pricing: "Per Project Basis", img1: "https://placehold.co/800x600/EF4444/FFFFFF?text=Video+Editing", img2:"https://placehold.co/800x600/991B1B/FFFFFF?text=Poster+Design" },
+            'talent-acquisition': { title: "Talent Acquisition", category: "Creative Services", desc: "<p>Apne project ke liye sahi talent dhoondhna mushkil ho sakta hai...</p>", pricing: "Commission Based / Retainer", img1: "https://placehold.co/800x600/8B5CF6/FFFFFF?text=Find+Actors", img2:"https://placehold.co/800x600/5B21B6/FFFFFF?text=Casting+Call" },
+            'music-marketing': { title: "Music Marketing & Promo", category: "Music Services", desc: "<p>Aapke music ko sahi audience tak pahunchane ke liye targeted marketing campaigns...</p>", pricing: "Custom Packages", img1: "https://placehold.co/800x600/22C55E/FFFFFF?text=Playlist+Pitching", img2:"https://placehold.co/800x600/15803D/FFFFFF?text=Music+Ads" },
+            'music-production': { title: "Music Production", category: "Music Services", desc: "<p>Idea se final master tak, humari team experienced producers aur engineers ke saath high-quality music production... </p>", pricing: "Per Project Basis", img1: "https://placehold.co/800x600/A855F7/FFFFFF?text=Studio+Session", img2:"https://placehold.co/800x600/6D28D9/FFFFFF?text=Mixing+Mastering" },
+            'sample-project-1': { title: "Music Video - 'Dil Se'", category: "Music Video Production & Editing", desc: "<p>Client ke vision ko samajhkar humne concept se lekar final edit tak poora music video produce kiya...</p>", pricing: "Project Budget: $XXXX", img1: "https://placehold.co/800x600/3B82F6/FFFFFF?text=Music+Video+Scene", img2:"https://placehold.co/800x600/1D4ED8/FFFFFF?text=Behind+The+Scenes" },
+            'sample-project-2': { title: "Album Art - 'Raat'", category: "Poster Design", desc: "<p>Ek unique aur eye-catching poster design kiya gaya...</p>", pricing: "Project Budget: $XXX", img1: "https://placehold.co/800x600/EF4444/FFFFFF?text=Final+Poster", img2:"https://placehold.co/800x600/991B1B/FFFFFF?text=Design+Elements" },
+            'sample-project-3': { title: "Tech Guru Vlog Edit", category: "Vlog Editing", desc: "<p>Client ke raw footage ko ek engaging vlog mein convert kiya...</p>", pricing: "Per Video Basis", img1: "https://placehold.co/800x600/10B981/FFFFFF?text=Vlog+Timeline", img2:"https://placehold.co/800x600/047857/FFFFFF?text=Final+Vlog" },
+            'sample-project-4': { title: "Local Cafe Brand Ad", category: "Brand Ad", desc: "<p>Ek short aur impactful digital ad banaya...</p>", pricing: "Project Budget: $XXXX", img1: "https://placehold.co/800x600/F59E0B/FFFFFF?text=Ad+Scene+1", img2:"https://placehold.co/800x600/B45309/FFFFFF?text=Ad+Scene+2" },
+            'sample-project-5': { title: "Acoustic Cover Video", category: "Music Video", desc: "<p>Simple aur elegant acoustic cover video shoot aur edit kiya...</p>", pricing: "Project Budget: $XXX", img1: "https://placehold.co/800x600/6366F1/FFFFFF?text=Acoustic+Setup", img2:"https://placehold.co/800x600/4338CA/FFFFFF?text=Close+Up" },
+            'sample-project-6': { title: "Live Concert Poster", category: "Poster Design", desc: "<p>Event ke liye ek vibrant poster design kiya...</p>", pricing: "Project Budget: $XX", img1: "https://placehold.co/800x600/EC4899/FFFFFF?text=Concert+Poster", img2:"https://placehold.co/800x600/9D174D/FFFFFF?text=Typography" }
+         };
+
+         // --- Dynamic Page Content Functions ---
+         window.showBlogDetail = function(postId) { 
+             showPage('page-blog-detail'); // FIX: Show page FIRST
+             const post = blogPostData[postId] || blogPostData[1]; 
+             const titleEl = document.getElementById('blog-detail-title');
+             const authorNameEl = document.getElementById('blog-detail-author-name');
+             const authorImgEl = document.getElementById('blog-detail-author-img');
+             const dateEl = document.getElementById('blog-detail-date');
+             const imageEl = document.getElementById('blog-detail-image');
+             const contentEl = document.getElementById('blog-detail-content');
+
+             if (titleEl) titleEl.textContent = post.title; else console.error("Element #blog-detail-title not found");
+             if (authorNameEl) authorNameEl.textContent = post.author; else console.error("Element #blog-detail-author-name not found");
+             if (authorImgEl) authorImgEl.src = post.authorImg; else console.error("Element #blog-detail-author-img not found");
+             if (dateEl) dateEl.textContent = post.date; else console.error("Element #blog-detail-date not found");
+             if (imageEl) imageEl.src = post.image; else console.error("Element #blog-detail-image not found");
+             if (contentEl) contentEl.innerHTML = post.content; else console.error("Element #blog-detail-content not found");
+        };
+
+         window.showServiceDetail = function(serviceId) {
+             showPage('page-service-detail'); // FIX: Show page FIRST
+             const data = serviceDetailData[serviceId] || serviceDetailData['channel-management']; 
+             const titleEl = document.getElementById('service-detail-title');
+             const categoryEl = document.getElementById('service-detail-category');
+             const descEl = document.getElementById('service-detail-desc');
+             const pricingEl = document.getElementById('service-detail-pricing');
+             const img1El = document.getElementById('service-detail-img1');
+             const img2El = document.getElementById('service-detail-img2');
+
+             if (titleEl) titleEl.textContent = data.title; else console.error("Element #service-detail-title not found");
+             if (categoryEl) categoryEl.textContent = data.category; else console.error("Element #service-detail-category not found");
+             if (descEl) descEl.innerHTML = data.desc; else console.error("Element #service-detail-desc not found");
+             if (pricingEl) pricingEl.textContent = data.pricing; else console.error("Element #service-detail-pricing not found");
+             if (img1El) img1El.src = data.img1; else console.error("Element #service-detail-img1 not found");
+             if (img2El) img2El.src = data.img2; else console.error("Element #service-detail-img2 not found");
+         }
+
+        // --- DOMContentLoaded for Event Listeners ---
          document.addEventListener('DOMContentLoaded', () => {
+             // Mobile Menu Button Listener
             const mobileMenuBtn = document.getElementById('mobile-menu-btn'); 
             const mobileMenu = document.getElementById('mobile-menu');
             if (mobileMenuBtn && mobileMenu) {
                 mobileMenuBtn.addEventListener('click', () => mobileMenu.classList.toggle('hidden'));
-            }
+            } else { console.error("Mobile menu elements not found!"); }
             
             // Auth Form Listeners
              const loginForm = document.getElementById('login-form');
-             if (loginForm) loginForm.addEventListener('submit', login);
+             if (loginForm) loginForm.addEventListener('submit', window.login); else console.error("Login form not found!");
+
              const signupForm = document.getElementById('signup-form');
-             if (signupForm) signupForm.addEventListener('submit', signup);
+             if (signupForm) signupForm.addEventListener('submit', window.signup); else console.error("Signup form not found!");
+
              const forgotForm = document.getElementById('forgot-password-form');
-             if (forgotForm) forgotForm.addEventListener('submit', forgotPassword);
+             if (forgotForm) forgotForm.addEventListener('submit', window.forgotPassword); else console.error("Forgot password form not found!");
 
              // Set initial UI state (Logged Out)
-             logout(); // Use logout function to set initial state
+             window.logout(); 
 
-             // Make showMessage globally available
-             window.showMessage = (text, isSuccess) => {
-                 const msgBox = document.getElementById('message-box');
-                 const msgText = document.getElementById('message-text');
-                 if (!msgBox || !msgText) return;
-                 msgText.textContent = text;
-                 msgBox.className = `fixed top-20 right-5 z-[100] p-4 rounded-lg shadow-lg ${isSuccess ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`;
-                 msgBox.classList.remove('hidden');
-                 setTimeout(() => { msgBox.classList.add('hidden'); }, 3000);
-             };
+             // --- NAYA: Global Click Listener for Dropdowns (FIX) ---
+             document.addEventListener('click', function(e) {
+                 const clickedToggle = e.target.closest('.dropdown-toggle');
+                 
+                 // Close all open dropdowns first
+                 document.querySelectorAll('.dropdown-menu, .mega-menu').forEach(menu => {
+                     // Find this menu's specific toggle button
+                     const toggleBtn = document.querySelector(`.dropdown-toggle[data-target="${menu.id}"]`);
+                     
+                     // If we clicked *outside* the menu AND we did *not* click its toggle button...
+                     if (!menu.contains(e.target) && (clickedToggle !== toggleBtn)) {
+                         menu.style.display = 'none';
+                     }
+                 });
 
-             // Activate the first nav link on load (optional, default is handled by showPage)
-             // const firstNavLink = document.querySelector('#logged-in-view .nav-link');
-             // if (firstNavLink) firstNavLink.classList.add('active');
+                 // If we clicked a toggle button, toggle its target menu
+                 if (clickedToggle) {
+                     const targetId = clickedToggle.dataset.target;
+                     const targetMenu = document.getElementById(targetId);
+                     if (targetMenu) {
+                         targetMenu.style.display = targetMenu.style.display === 'block' ? 'none' : 'block';
+                     }
+                 }
+             });
         });
-
     </script>
     
     <!-- 
       Module Script for AI, Other Initializations (Testimonials, Filters, etc.)
     -->
     <script type="module">
-        // Global variables (if needed specifically here)
+        // Global variables
         let chatHistory = [];
         let currentTestimonialSlide = 0;
 
-        // Utilities (if needed specifically here, otherwise use global ones)
-        function showLoader(loaderId, show) { /* ... */ }
-        function toggleButtonSpinner(button, show) { /* ... */ }
+        // --- Utilities ---
+        function showLoader(loaderId, show) { 
+             const loader = document.getElementById(loaderId);
+            if(loader) loader.classList.toggle('hidden', !show);
+            else console.error(`Loader element #${loaderId} not found.`);
+        }
+        function toggleButtonSpinner(button, show) { 
+             if (!button) { console.error("toggleButtonSpinner called with null button."); return; }
+             if (show) {
+                button.disabled = true;
+                if (!button.dataset.originalText) { button.dataset.originalText = button.innerHTML; }
+                button.innerHTML = `<span class="loader !w-4 !h-4 !border-2 !border-t-white"></span>`;
+            } else {
+                button.disabled = false;
+                button.innerHTML = button.dataset.originalText || "Submit";
+            }
+         }
         
-        // Gemini API Call Function
-        async function exponentialBackoff(fn) { /* ... */ }
-        async function callGeminiAPI(prompt, systemInstruction = null, history = []) { /* ... */ }
+        // --- Gemini API Call Function ---
+        async function exponentialBackoff(fn) {
+            let delay = 1000;
+            let retries = 5;
+            for (let i = 0; i < retries; i++) {
+                try { return await fn(); } catch (error) {
+                    if (i === retries - 1) throw error;
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    delay *= 2;
+                }
+            }
+        }
+        async function callGeminiAPI(prompt, systemInstruction = null, history = []) { 
+            const apiKey = ""; 
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+            const requestBody = { contents: [] };
+             if (systemInstruction) { requestBody.systemInstruction = { parts: [{ text: systemInstruction }] }; }
+             if (Array.isArray(history)) { requestBody.contents.push(...history); }
+             if (prompt) { requestBody.contents.push({ role: "user", parts: [{ text: prompt }] }); }
+            
+            const fetchWithBackoff = () => fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(requestBody) });
 
-        // Theme Toggle
-        function updateThemeIcon(isDark) { /* ... */ }
-        function toggleTheme() { /* ... */ }
-        
-        // AI Chatbot Logic
-        function initChatbot() { /* ... */ }
-        
-        // Music Page AI Features
-        function initMusicFeatures() { /* ... */ }
-        
-        // MCN Page AI Features
-        function initMCNFeatures() { /* ... */ }
-        
-        // Profile Form (Simulated Save)
-        function initProfileForm() { /* ... */ }
-        
-        // Homepage Scroll Animation Logic
-        function initScrollAnimations() { /* ... */ }
-        
-        // Testimonial Slider Logic
-        function initTestimonialSlider() { /* ... */ }
-        
-        // Bazaar/Portfolio Filter Logic
-        function initFilters() { /* ... */ }
+            try {
+                const response = await exponentialBackoff(fetchWithBackoff);
+                if (!response.ok) { 
+                     const errorBody = await response.json();
+                     throw new Error(`API Error ${response.status}: ${errorBody.error.message}`);
+                 }
+                const result = await response.json();
+                if (result.candidates && result.candidates[0]?.content?.parts?.[0]?.text) {
+                    return result.candidates[0].content.parts[0].text;
+                } else {
+                     if (result.candidates && result.candidates[0]?.finishReason === 'SAFETY') { throw new Error("Response blocked for safety reasons."); } 
+                     else if (!result.candidates || result.candidates.length === 0) { throw new Error("No response generated by the API."); }
+                    throw new Error("Invalid response structure from API.");
+                }
+            } catch (error) {
+                console.error("Gemini API call failed:", error);
+                 if (window.showMessage) { window.showMessage("AI Error: " + error.message, false); }
+                return null;
+            }
+        }
 
-        // Project Submit Form Simulation
-        function initProjectSubmitForm() { /* ... */ }
+        // --- Theme Toggle ---
+        function updateThemeIcon(isDark) { 
+             const iconName = isDark ? 'sunny-outline' : 'moon-outline';
+             document.querySelectorAll('#theme-toggle').forEach(btn => {
+                if (btn) btn.innerHTML = `<ion-icon name="${iconName}" class="text-xl"></ion-icon>`;
+             });
+        }
+        function toggleTheme() { 
+             document.documentElement.classList.toggle('dark');
+            const isDark = document.documentElement.classList.contains('dark');
+            updateThemeIcon(isDark);
+        }
+        
+        // --- AI Chatbot Logic ---
+        function initChatbot() { 
+             const chatForm = document.getElementById('chat-form');
+             const chatInput = document.getElementById('chat-input');
+             const chatMessages = document.getElementById('chat-messages');
+             const chatLoader = document.getElementById('chat-loader');
+             if (!chatForm || !chatInput || !chatMessages || !chatLoader) { console.warn("Chatbot elements not found."); return; }
+
+            chatHistory = [{ role: "model", parts: [{ text: "Namaste! Main R.S Films ka AI Assistant hoon..." }] }];
+            
+            chatForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const userMessage = chatInput.value.trim();
+                if (!userMessage) return;
+                chatInput.value = '';
+                const userBubble = document.createElement('div');
+                userBubble.className = 'chat-bubble chat-bubble-user';
+                userBubble.innerHTML = `<p>${userMessage}</p>`;
+                chatMessages.insertBefore(userBubble, chatLoader);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                chatLoader.classList.remove('hidden');
+                chatInput.disabled = true;
+                const submitButton = chatForm.querySelector('button');
+                if(submitButton) submitButton.disabled = true;
+                const systemPrompt = "Aap R.S Films Group ke ek expert 'Creator Assistant' AI hain...";
+                chatHistory.push({ role: "user", parts: [{ text: userMessage }] });
+                
+                // FIX: Pass history *without* prompt, as user message is already in history
+                const aiResponse = await callGeminiAPI(null, systemPrompt, chatHistory); 
+
+                chatLoader.classList.add('hidden');
+                chatInput.disabled = false;
+                 if(submitButton) submitButton.disabled = false;
+                chatInput.focus();
+
+                if (aiResponse) {
+                    const formattedResponse = aiResponse.replace(/\n\*/g, '<br>•').replace(/\n[0-9]\./g, (match) => `<br>${match.trim()}`);
+                    const aiBubble = document.createElement('div');
+                    aiBubble.className = 'chat-bubble chat-bubble-ai';
+                    aiBubble.innerHTML = formattedResponse;
+                    chatMessages.insertBefore(aiBubble, chatLoader);
+                    chatHistory.push({ role: "model", parts: [{ text: aiResponse }] });
+                } else {
+                    chatHistory.pop(); // Remove user message if AI fails
+                    const errorBubble = document.createElement('div');
+                    errorBubble.className = 'chat-bubble chat-bubble-ai';
+                    errorBubble.innerHTML = `<p class="text-red-500">Sorry, mujhe abhi connect karne mein samasya aa rahi hai...</p>`;
+                    chatMessages.insertBefore(errorBubble, chatLoader);
+                }
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            });
+        }
+        
+        // --- Music Page AI Features ---
+        function initMusicFeatures() { 
+             const btn = document.getElementById('generate-tweet-btn');
+             const artistInput = document.getElementById('artist-name');
+             const songInput = document.getElementById('song-title');
+             const resultContainer = document.getElementById('tweet-result-container');
+             const resultTextarea = document.getElementById('tweet-result');
+             if (!btn || !artistInput || !songInput || !resultContainer || !resultTextarea) { console.warn("Music feature elements not found."); return; }
+             btn.addEventListener('click', async () => {
+                 const artist = artistInput.value; const song = songInput.value;
+                 if (!artist || !song) { window.showMessage("Pehle Artist Name aur Song Title bharein.", false); return; }
+                 showLoader('music-loader', true); btn.disabled = true;
+                 const prompt = `Mere naye gaane ke liye ek short, exciting promotion tweet (max 280 characters) generate karein. Artist: ${artist}, Song Title: ${song}. Tweet mein hashtags aur ek call-to-action (jaise "Stream now!") shaamil karein.`;
+                 const response = await callGeminiAPI(prompt, "Aap ek expert music promoter hain.");
+                 showLoader('music-loader', false); btn.disabled = false;
+                 if (response) { resultContainer.classList.remove('hidden'); resultTextarea.value = response; }
+             });
+        }
+        
+        // --- MCN Page AI Features ---
+        function initMCNFeatures() { 
+             const btn = document.getElementById('generate-ideas-btn');
+             const channelInput = document.getElementById('channel-name');
+              const resultContainer = document.getElementById('ideas-result-container');
+              const resultDiv = document.getElementById('ideas-result');
+             if (!btn || !channelInput || !resultContainer || !resultDiv) { console.warn("MCN feature elements not found."); return; }
+             btn.addEventListener('click', async () => {
+                 const channel = channelInput.value;
+                 if (!channel) { window.showMessage("Pehle Channel Name bharein.", false); return; }
+                 showLoader('mcn-loader', true); btn.disabled = true;
+                 const prompt = `Mere YouTube channel "${channel}" ke liye 5 creative video ideas suggest karein. Ideas ko ek numbered list mein format karein.`;
+                 const response = await callGeminiAPI(prompt, "Aap ek expert YouTube channel manager hain.");
+                 showLoader('mcn-loader', false); btn.disabled = false;
+                 if (response) { resultContainer.classList.remove('hidden'); resultDiv.innerHTML = response.replace(/\n/g, '<br>'); }
+             });
+        }
+        
+        // --- Profile Form (Simulated Save) ---
+        function initProfileForm() { 
+             const form = document.getElementById('profile-form');
+             const passwordForm = document.getElementById('password-form');
+             if (!form || !passwordForm) { console.warn("Profile forms not found."); return; }
+             form.addEventListener('submit', async (e) => { 
+                 e.preventDefault(); 
+                 const button = form.querySelector('button[type="submit"]');
+                 toggleButtonSpinner(button, true);
+                 await new Promise(res => setTimeout(res, 500)); 
+                 window.showMessage("Profile successfully update ho gayi!", true);
+                 toggleButtonSpinner(button, false);
+             });
+             passwordForm.addEventListener('submit', async (e) => { 
+                 e.preventDefault(); 
+                 const button = passwordForm.querySelector('button[type="submit"]');
+                 toggleButtonSpinner(button, true);
+                 await new Promise(res => setTimeout(res, 500));
+                 window.showMessage("Password updated successfully (simulation)!", true);
+                 toggleButtonSpinner(button, false);
+                 passwordForm.reset();
+              });
+        }
+        
+        // --- Homepage Scroll Animation Logic ---
+        function initScrollAnimations() { 
+             const animatedElements = document.querySelectorAll('.animate-on-scroll');
+             if (animatedElements.length === 0) return;
+             const observer = new IntersectionObserver((entries) => { 
+                 entries.forEach(entry => { if (entry.isIntersecting) { entry.target.classList.add('in-view'); } });
+             }, { threshold: 0.1 });
+             animatedElements.forEach(el => observer.observe(el));
+        }
+        
+        // --- Testimonial Slider Logic ---
+        function initTestimonialSlider() { 
+             const slider = document.getElementById('testimonial-slider-inner');
+             const dotsContainer = document.getElementById('testimonial-dots');
+             if (!slider || !dotsContainer) { console.warn("Testimonial slider not found."); return; }
+             const slides = slider.querySelectorAll('.testimonial-slide');
+             const dots = dotsContainer.querySelectorAll('.testimonial-dot');
+             if (slides.length === 0 || dots.length === 0) return;
+             const totalSlides = slides.length;
+             function updateSlider(slideIndex) {
+                 if(slider) slider.style.transform = `translateX(-${slideIndex * 100}%)`;
+                 dots.forEach((dot, index) => {
+                     dot.classList.toggle('bg-primary', index === slideIndex);
+                     dot.classList.toggle('bg-gray-300', index !== slideIndex);
+                 });
+             }
+             let intervalId = setInterval(() => {
+                 currentTestimonialSlide = (currentTestimonialSlide + 1) % totalSlides;
+                 updateSlider(currentTestimonialSlide);
+             }, 5000); 
+             dots.forEach((dot, index) => { 
+                 dot.addEventListener('click', () => { 
+                     currentTestimonialSlide = index; 
+                     updateSlider(currentTestimonialSlide);
+                     clearInterval(intervalId); // Stop auto-play on click
+                     intervalId = setInterval(() => { // Restart auto-play
+                         currentTestimonialSlide = (currentTestimonialSlide + 1) % totalSlides;
+                         updateSlider(currentTestimonialSlide);
+                     }, 5000);
+                 }); 
+             });
+        }
+        
+        // --- Bazaar/Portfolio Filter Logic ---
+        function initFilters() { 
+             const bazaarFilterButtons = document.querySelectorAll('#bazaar-filters .filter-btn');
+             const bazaarItems = document.querySelectorAll('.bazaar-item');
+             const hireItems = document.querySelectorAll('.hire-item');
+             if (bazaarFilterButtons.length > 0) { 
+                 bazaarFilterButtons.forEach(button => { 
+                     button.addEventListener('click', () => { 
+                         bazaarFilterButtons.forEach(btn => btn.classList.remove('active'));
+                         button.classList.add('active');
+                         const filter = button.dataset.filter;
+                         bazaarItems.forEach(item => {
+                             if (filter === 'all' || filter === 'psd' || filter === 'lut') {
+                                 item.style.display = (filter === 'all' || item.dataset.category === filter) ? 'block' : 'none';
+                             } else { item.style.display = 'none'; }
+                         });
+                         hireItems.forEach(item => {
+                             if (filter === 'all' || filter === 'editor' || filter === 'designer') {
+                                 item.style.display = (filter === 'all' || item.dataset.category === filter) ? 'block' : 'none';
+                             } else { item.style.display = 'none'; }
+                         });
+                     }); 
+                 }); 
+             }
+
+             const portfolioFilterButtons = document.querySelectorAll('#portfolio-filters .filter-btn');
+             const portfolioItems = document.querySelectorAll('.portfolio-item');
+             if (portfolioFilterButtons.length > 0) { 
+                 portfolioFilterButtons.forEach(button => { 
+                     button.addEventListener('click', () => { 
+                         portfolioFilterButtons.forEach(btn => btn.classList.remove('active'));
+                         button.classList.add('active');
+                         const filter = button.dataset.filter;
+                         portfolioItems.forEach(item => {
+                             item.style.display = (filter === 'all' || item.dataset.category === filter) ? 'block' : 'none';
+                         });
+                     }); 
+                 }); 
+             }
+        }
+
+        // --- Project Submit Form Simulation ---
+        function initProjectSubmitForm() { 
+             const form = document.getElementById('project-submit-form');
+             if (!form) { console.warn("Project submit form not found."); return; }
+             form.addEventListener('submit', async (e) => { 
+                 e.preventDefault(); 
+                 const button = form.querySelector('button[type="submit"]');
+                 toggleButtonSpinner(button, true);
+                 await new Promise(res => setTimeout(res, 500));
+                 window.showMessage("Project submitted successfully! Hum jald hi review karenge.", true);
+                 toggleButtonSpinner(button, false);
+                 form.reset(); 
+                 if(window.showDashboard) window.showDashboard(); // Redirect to dashboard
+             });
+        }
 
 
         // ===== Main Initialization for Module =====
         document.addEventListener('DOMContentLoaded', () => {
             // Theme Toggle Listener
             const themeToggle = document.getElementById('theme-toggle');
-            if (themeToggle) themeToggle.addEventListener('click', toggleTheme);
+            if (themeToggle) themeToggle.addEventListener('click', toggleTheme); else console.error("Theme toggle button not found!");
             updateThemeIcon(document.documentElement.classList.contains('dark')); // Initial theme check
             
             // Init Features
